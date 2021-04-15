@@ -21,5 +21,8 @@ This app was built on top of the [-idefix-](http://dx.doi.org/10.18637/jss.v096.
 
 The app was developed in R by Daniel Pérez Troncoso at the Department of Applied Economics at the University of Granada. Contact: danielperez@ugr.es
 
+## License 
+Copyleft. License GPL-3
+
 ## Cite
-lease, cite as Daniel Pérez Troncoso (2021) DCE tool. [https://github.com/danielpereztr/DCEtool/](https://github.com/danielpereztr/DCEtool/)
+Please, cite as Daniel Pérez Troncoso (2021) DCE tool. [https://github.com/danielpereztr/DCEtool/](https://github.com/danielpereztr/DCEtool/)
