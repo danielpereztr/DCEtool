@@ -67,7 +67,7 @@ ui <- fluidPage(theme=shinytheme("flatly"),
                           HTML("<p>The app was developed in R by <a href='http://danielpereztr.es/'>Daniel Pérez Troncoso</a> at the Department of Applied Economics at the University of Granada.
            Contact: <a href = 'mailto:danielperez@ugr.es'>danielperez@ugr.es</a></p>"),
                           hr(),
-                          HTML("<p>Please, cite as Daniel Pérez Troncoso (2021) DCE tool. <a href='link'>link</a>"),
+                          HTML("<p>Please, cite as Daniel Pérez Troncoso (2021) DCE tool. <a href='https://github.com/danielpereztr/DCEtool'>https://github.com/danielpereztr/DCEtool</a>"),
                           hr(),
                           HTML("<p><b>Changelog</b><p>"),
                           HTML("<ul>
