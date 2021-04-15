@@ -25,4 +25,4 @@ The app was developed in R by Daniel Pérez Troncoso at the Department of Applie
 Copyleft. License GPL-3
 
 ## Cite
-Please, cite as Daniel Pérez Troncoso (2021) DCE tool. [https://github.com/danielpereztr/DCEtool/](https://github.com/danielpereztr/DCEtool/)
+Please, cite as Daniel Pérez-Troncoso (2021) DCE tool. [https://github.com/danielpereztr/DCEtool/](https://github.com/danielpereztr/DCEtool/)
