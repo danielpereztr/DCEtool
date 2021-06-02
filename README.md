@@ -2,6 +2,10 @@
 Complete package for creating, surveying, and analysing Discrete Choice Experiments
 
 ## How to run it?
+* From GitHub
+`install.package("devtools")`
+`library(devtools)`
+`install_github("danielpereztr/DCEtool")`
 * Via CRAN (in RStudio)
 `install.package("DCEtool")`
 `library(DCEtool)`
