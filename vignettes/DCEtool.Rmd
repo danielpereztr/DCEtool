@@ -1,0 +1,21 @@
+---
+title: "DCEtool"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{DCEtool}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(DCEtool)
+```
+
+Run the app with DCEtool() and read the first tab.
