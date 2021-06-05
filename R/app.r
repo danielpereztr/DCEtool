@@ -274,6 +274,7 @@ ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
                           HTML("<p><a href='http://danielpereztr.es/dcetool-una-herramienta-visual-para-disenar-encuestar-y-analizar-experimentos-de-eleccion-discreta'>Guide in Spanish</a></p>"),
                           HTML("<p><b>Changelog</b><p>"),
                           HTML("<ul>
+                                <li>05/06/2021 (v 0.3.1): Fixed a bug that prevented the survey from advancing to the next respondent.</li>
                                 <li>20/05/2021 (V 0.3.0): Price can be coded as a linear variable and a mixed logit can be estimated (unstable). Bugs fixed</li>
                                 <li>20/05/2021 (V 0.2.2): Priors selection improved, variable names added to the tables and model, survey wizard, serial designs improved</li>
                                 <li>07/05/2021 (V 0.2.1): Now priors can be specified</li>
@@ -541,6 +542,7 @@ server = function(input, output) {
 
   # Create the survey when survey.button is clicked #
   observeEvent(input$survey.button,{
+    values$cs <- 0
     values$respcount <- 1
     algorithm = "CEA"
     values$altnames <- input$altnames
@@ -605,19 +607,15 @@ server = function(input, output) {
       shinyjs::click("OK")
     })
     
-    observeEvent(input$OK,{
-      n.total <- values$s
-      values$nsn <- values$nsn+1
-      if (values$nsn>n.total+2){
-        values$nsn <- 0
-      }
-    })
-    
-   
     
     # When the OK button is clicked #
     observeEvent(input$OK, {
-      values$bnum <- values$bnum+1
+      ####nueva implementacin
+      values$cs <- values$cs + 1
+      if (values$cs>values$s+2){
+        values$cs <- 1
+      }
+      ####final nueva implementacin
       n.atts <- length(unlist(c(values$df[1])))
       atts <- values$df[,1]
       alts <- unlist(values$altnames)
@@ -732,19 +730,15 @@ server = function(input, output) {
     output$intro.text <- renderUI(markdown(input$intro.text, .noWS = TRUE))
      observeEvent(input$OK, {
        n.total <- values$s
-       cat("\n nsn: ", values$nsn, "\n")
-       cat("\n n.total: ", n.total, "\n")
        if (sn!=sn+2){
        output$intro.text <- renderUI(NULL)
        shinyjs::hide("OK")
        } 
-       if (values$nsn>n.total+1){
+       if (values$cs == 0 | values$cs == values$s+2){
          values$nsn <<- 0 
          sn <<- 0 
          output$intro.text <- renderUI(markdown(input$intro.text, .noWS = TRUE))
          shinyjs::show("OK")
-         if(!is.null(input$serial)){
-         }
        }
      })
 
@@ -762,7 +756,7 @@ server = function(input, output) {
       
     n.total <- values$s
     vsn <- values$sn
-    if ((input$OK)==((values$s+1)+(values$s+2)*(values$respcount-1))) { # Display end text
+    if (values$cs == values$s+1) { # Display end text
         values$alldes <- rbind(values$alldes, values$des)
         output$end <- renderUI(markdown(input$end.text, .noWS = TRUE))
         shinyjs::show("nextbutton")
@@ -785,11 +779,9 @@ server = function(input, output) {
       gid <- rep(1:x, each=values$a)
       alt <- rep(c(1:values$n.alts), values$n.init)
       results <- cbind(values$alldes,as.data.frame(values$surveyData[1]), as.data.frame(gid), as.data.frame(alt))
-      print(results)
       filas <- nrow(results)
       pid <- rep(1:(filas/nrow(values$des)), each = nrow(values$des))
       results <- cbind(results, pid)
-      print(results)
       results <- as.data.frame(results)
       vars <- results[ , -((ncol(results) - 3):ncol(results))]
       vars <- colnames(vars)
