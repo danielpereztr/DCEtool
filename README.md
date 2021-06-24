@@ -3,7 +3,7 @@ Complete package for creating, surveying, and analysing Discrete Choice Experime
 
 ## How to run it?
 * From GitHub
-`install.package("devtools")`
+`install.packages("devtools")`
 `library(devtools)`
 `install_github("danielpereztr/DCEtool")`
 `library(DCEtool)`
