@@ -1,1 +1,0 @@
-You can import an .xlsx file containing the treatments, their QALYs and their costs. For the app to work properly, you need a .xlsx file with three columns without a header. In order, specify in each row the name of the treatment, the QALYs and the costs. 

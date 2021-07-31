@@ -1,6 +1,6 @@
 \name{DCEtool}
 \alias{DCEtool}
-\title{Complete package for creating, surveying, and analysing Discrete Choice Experiments}
+\title{Efficient and Accessible Experimental Designs for Discrete Choice Experiments: DCEtool}
 \description{This app is intended to be a complete package for creating, surveying, and analysing discrete choice experiments. Although all these functionalities are available, the app can also be used only to obtain the design of a discrete choice experiment.
 
 Introduce the parameters of the DCE in the 'Parameters' tab. Suppose you want to enter the first attribute in Table 1 of this article \doi{10.1016/j.jval.2016.04.004}. To do this, enter 'Efficacy' under 'Name of the attribute', '3' under 'Number of levels' and 'L1,L2,L3' under 'Levels' name'. Once you click on 'Add,' you will see the attribute appear on the right table. Try including more attributes. Once you have more then two attributes, enter the number of alternatives per choice set, the number of choice sets per respondent, choose if you want a null choice, and click on 'Save inputs'.

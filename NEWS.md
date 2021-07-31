@@ -1,4 +1,6 @@
-v 0.3.1 - Fixed a bug that prevented the survey from advancing to the next respondent. 
+
+
+v 0.3.1 - Fixed a bug that prevented the survey from advancing to the next respondent. Many minor changes introduced. 
 
 v 0.3.0 - Price can be coded as a linear variable. Mixed logit (RPL) was included. Bugs fixed
 

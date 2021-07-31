@@ -1,0 +1,1 @@
+Use and remember any integer number to get the same design when the same seed is used.

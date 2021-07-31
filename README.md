@@ -1,17 +1,6 @@
 # DCEtool
 Complete package for creating, surveying, and analysing Discrete Choice Experiments
 
-## How to run it?
-* From GitHub
-`install.packages("devtools")`
-`library(devtools)`
-`install_github("danielpereztr/DCEtool")`
-`library(DCEtool)`
-`DCEtool()`
-* Via CRAN (in RStudio)
-`install.package("DCEtool")`
-`library(DCEtool)`
-
 ## The app
 This app is intended to be a complete package for creating, surveying, and analysing discrete choice experiments. Although all these functionalities are available, the app can also be used only to obtain the design of a discrete choice experiment.
 

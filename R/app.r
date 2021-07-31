@@ -25,6 +25,9 @@ requireNamespace('mlogit')
 #' @importFrom shiny fluidRow
 #' @importFrom shiny column
 #' @importFrom shiny p
+#' @importFrom shiny em
+#' @importFrom shiny h3
+#' @importFrom shiny br
 #' @importFrom shiny HTML
 #' @importFrom shiny sidebarLayout
 #' @importFrom shiny sidebarPanel
@@ -79,6 +82,11 @@ requireNamespace('mlogit')
 #' @importFrom bslib bs_themer
 #' @importFrom mlogit mlogit.data
 #' @importFrom mlogit mlogit
+#' @importFrom shiny tabsetPanel
+#' @importFrom shinyhelper helper
+#' @importFrom shinyhelper observe_helpers
+#' @importFrom shiny updateTabsetPanel
+
 
 
 
@@ -103,31 +111,56 @@ sdata <- vector(mode = "list")
 fulldes <- matrix()
 sncum <- 0
 nsn <- 0
-
 #### User interface ####
 ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
-      navbarPage(title=tags$div(tags$img(src="http://danielpereztr.es/wp-content/uploads/2021/06/logo.png", height = '37.5px', width = '150px')),
+      navbarPage(title=tags$div(tags$img(src="http://danielpereztr.es/wp-content/uploads/2021/07/Logo-0.3.1.png", height = '37.5px', width = '150px')),
+                 tabsetPanel(id ="panel",
+                  tabPanel(icon("igloo"), #Main page
+                           fluidRow(column(tags$img(src="http://danielpereztr.es/wp-content/uploads/2021/07/Granada.png",width="320px",height="260px"),width=1.1, HTML("<p style='text-align:center;'>Dpt. Applied Economics. University of Granada.</p>")),
+                                    column(
+                                      
+                                      br(),
+                                      p("DCEtool is an R package with a visual interface coded in Shiny that makes accessible good design properties to both new and experienced researchers.
+                                        DCEtool can create and decode DCEs, present a local interactive survey, and analyze the responses to the survey with discrete choice models.
+                                        DCEtool incorporates code from the idefix package to create the experimental design and present the interactive survey, from the survival 
+                                        and mlogit packages to analyze the results, and new code for the visual interface and data management.",style="text-align:justify;color:black;background-color:LightGrey;padding:15px;border-radius:10px"),
+                                      br(),
+                                      column(
+                                      p(actionButton(inputId = "create_DCE", label = "Create a DCE", icon = icon("puzzle-piece"), style="background-color: #D9230F; color: white"),
+                                      style="text-align:center;"),
+                                      width=12),
+                                      width=8),
+                                    ),
+                           
+                           hr(),
+                           HTML("<p style=text-align:center; font-family: times>Developed by Daniel P&eacute;rez-Troncoso</p>"),
+                           hr(),
+                           HTML("<p style=text-align:center; font-family: times>Please cite as Daniel P&eacute;rez-Troncoso (2021). Efficient and accessible DCEs: DCEtool.</p>")
+                  ),
                   tabPanel("Parameters", #Parameters input
                            sidebarLayout(
                              sidebarPanel(
                                h4("Attributes and levels"),
                                textInput("name", "Name of the attribute", ""),
                                numericInput("lev", "Number of levels", ""),
-                               textInput("label", "Levels' name (in order and separated by commas)", ""),
+                               helper(shiny::textInput("label", "Levels' name", ""),type = "markdown", icon ="question-circle", colour="Tomato", title = "Levels' names", content = "levnames"),
                                actionButton(inputId = "add.button", label = "Add", icon = icon("plus")),
                                actionButton(inputId = "delete.button", label = "Delete", icon = icon("minus")),
                                hr(),
-                               actionButton(inputId = "example.button", label = "Load example data", icon = icon("upload")),
+                               helper(shiny::actionButton(inputId = "example.button", label = "Load example data", icon = icon("upload")),type = "markdown", icon ="question-circle", colour="Tomato", title = "Example data", content = "example"),
                                hr(),
                                h4("Other parameters"),
                                numericInput("a", "No. of alternatives per choice set", ""),
                                numericInput("s", "No. of choice sets per respondent", ""),
-                               checkboxInput("nula", "Opt-out alternative", FALSE),
+                               checkboxInput(inputId = "nula", label = "Opt-out alternative"),
+                               checkboxInput(inputId = "advopt", label = "Advanced options"),
+                               conditionalPanel(condition = "input.advopt == '1'",
+                               helper(shiny::numericInput("seed", "Seed", value = 0), type = "markdown", icon = "question-circle", colour = "Tomato", title = "Random seed", content = "seed"),
                                selectInput("priorstype", "Type of priors", c("Zero (pilot design)"="zero", "Personalized priors"="personalized")),
                                conditionalPanel(
-                                   condition = "input.priorstype == 'personalized'",
-                                   textInput('userpriors', 'Prior coefficients*',""),
-                                   t("*Enter the prior coefficients separated by commas. The number of coefficients must be equal to: l-k (+1 if an opt-out alternative is included). l: total number of levels, k: total number of attributes. ")),
+                                 condition = "input.priorstype == 'personalized'",
+                                 helper(shiny::textInput('userpriors', 'Prior coefficients*',""),type = "markdown", icon ="question-circle", colour="Tomato", title = "Prior coefficients", content = "priors"),
+                               )),
                                hr(),
                                actionButton(inputId = "gen.button", label = "Save inputs", icon = icon("window-restore"))
                              ),
@@ -135,23 +168,28 @@ ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
                                dataTableOutput('table')
                              )
                            )
-                        ),
+                  ),
 
-                  tabPanel("Design matrix", #Design output
+                  tabPanel(title="Design matrix",value="design", #Design output
                            sidebarLayout(
                              sidebarPanel(
                                downloadButton("downloadData", "Download"),
                                hr(),
+                               actionButton("derror", "Print the D-error"),
+                               br(),
+                               br(),
                                actionButton("decode", "Decode the design matrix")
                              ),
                              mainPanel(
                                shinycssloaders::withSpinner(dataTableOutput('table2'), type = 6, color="#D5220E"),
+                               verbatimTextOutput('error'),
+                               hr(),
                                verbatimTextOutput('decoded')
                              )
                            )
                   ),
                  
-                 tabPanel("Survey wizard", #instructions
+                 tabPanel("Survey wizard", #Survey assistant
                           p("If the content is not displayed properly, resize the window. "),
                           hr(),
                           glide(
@@ -223,7 +261,8 @@ ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
                              column(12, align = "center", actionButton("OK", "OK")),
                              useShinyjs(),
                              column(12, align = "center", actionButton("nextbutton", "Next respondent")),
-                             hr()
+                             hr(),
+                             column(12, align = "center", actionButton("gotoresults", "Go to results")),
 
                            )
                   ),
@@ -233,6 +272,14 @@ ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
                         sidebarPanel(
                           downloadButton("downloadResults", "Download"),
                           hr(),
+                          h4("Estimation"),
+                          br(),
+                          actionButton(inputId = "estimate", label = "Conditional logit"),
+                          br(),
+                          br(),
+                          actionButton(inputId = "mixed", label = "Rondom parameters logit"),
+                          br(),
+                          br(),
                           checkboxInput("linearpricecheck", "Price as linear variable", FALSE),
                           conditionalPanel(
                             condition = "input.linearpricecheck ==1",
@@ -244,54 +291,37 @@ ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
                             hr(),
                             actionButton(inputId = "linpriceclogit", label = "Conditional logit with linear price")
                           ),
-                          hr(),
-                          actionButton(inputId = "estimate", label = "Estimate a conditional logit"),
-                          hr(),
-                          actionButton(inputId = "mixed", label = "Estimate a mixed (random parameters) logit")
                         ),
                         mainPanel(
                           dataTableOutput('results'),
                           verbatimTextOutput('model')
                         )
                       )
-                  ),
+                  )
                  
-                 tabPanel("Instructions", #Instructions
-                          fluidRow(column(width=2),
-                                   column(
-                                     p("Welcome to DCEtool, an app to create, respond and analyse DCEs",style="color:black;text-align:center"),
-                                     width=8,style="background-color:papayawhip;border-radius: 10px")),
-                          hr(),
-                          HTML('<p align="center"><iframe width="840" height="472.5" src="https://www.youtube.com/embed/PmngsAHCOIY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>'),
-                          h4("About"),
-                          HTML("<p>This app was built on top of the <a href='http://dx.doi.org/10.18637/jss.v096.i03'>-idefix-</a> package by Traets et al. (2020) to simplify the task of creating DCEs and feasibly implement <a href='https://doi.org/10.1108/9781849507738-006'>Bliemer and Rose's sequential design approach</a>. </p>"),
-                          hr(),
-                          HTML("<p>The app was developed in R by <a href='http://danielpereztr.es/'>Daniel Perez Troncoso</a> at the Department of Applied Economics at the University of Granada.
-           Contact: <a href = 'mailto:danielperez@ugr.es'>danielperez@ugr.es</a></p>"),
-                          hr(),
-                          HTML("<p>Please, cite as Daniel Perez Troncoso (2021) DCE tool. <a href='https://github.com/danielpereztr/DCEtool'>https://github.com/danielpereztr/DCEtool</a>"),
-                          hr(),
-                          HTML("<p><a href='http://danielpereztr.es/dcetool-una-herramienta-visual-para-disenar-encuestar-y-analizar-experimentos-de-eleccion-discreta'>Guide in Spanish</a></p>"),
-                          HTML("<p><b>Changelog</b><p>"),
-                          HTML("<ul>
-                                <li>05/06/2021 (v 0.3.1): Fixed a bug that prevented the survey from advancing to the next respondent.</li>
-                                <li>20/05/2021 (V 0.3.0): Price can be coded as a linear variable and a mixed logit can be estimated (unstable). Bugs fixed</li>
-                                <li>20/05/2021 (V 0.2.2): Priors selection improved, variable names added to the tables and model, survey wizard, serial designs improved</li>
-                                <li>07/05/2021 (V 0.2.1): Now priors can be specified</li>
-                                <li>16/04/2021 (V 0.0.1): Release</li>
-                                </ul>")
-                 )
                  
                  
     ) #end of navpage
-    ) #end of ui
+    )) #end of ui
 
-server = function(input, output) {
+server = function(input, output, session) {
 
+  
+  #helpers
+  observe_helpers(help_dir="vignettes/helpfiles")
+  
+  #redirect to 'Parameters'
+  observeEvent(input$create_DCE, {
+    updateTabsetPanel(session,"panel",selected = "Parameters")
+  })
+  
+  
+  
   # Storage of changing variables #
   values <- reactiveValues()
   values$df <- data
-
+  
+  
   # Table input for attributes and levels #
   observeEvent(input$add.button,{
     print(input$name)
@@ -310,10 +340,11 @@ server = function(input, output) {
       values$df <- head(values$df,-1)
     }
   )
+  
 
   # Input an example data set #
   observeEvent(input$example.button,{
-    exampledata <- data.frame(name=c("Effectiveness", "Doses", "Adverse events", "Price"), lev=c(3, 2, 3, 3), label=c("70%,80%,90%","1 dose,2 doses","0.1%,0.5%,1%","50,100,150"))
+    exampledata <- data.frame(name=c("Effectiveness (%)", "Required doses", "Adverse events", "Price (???)"), lev=c(3, 2, 3, 3), label=c("70,80,90","1 dose,2 doses","1 in 1000 patients,1 in 500 patients,1 in 100 patients","100,150,200"))
     values$df <- rbind(values$df, exampledata)
     data.0 <- rbind(data.0, exampledata)
   })
@@ -325,6 +356,7 @@ server = function(input, output) {
     values$tablex <- tablex
     tablex
   })
+  
 
   # Save inputs in changing variables #
   observeEvent(input$gen.button,{
@@ -339,8 +371,13 @@ server = function(input, output) {
     values$userpriors <- unlist(strsplit(values$userpriors, split=","))
     values$userpriors <- as.numeric(values$userpriors)
     values$nsn <- 1
+    if(input$seed!=0){
+      values$seed <- input$seed
+      set.seed(values$seed)
+    }
   })
 
+  # Text for the survey assistant #
   output$alternatives <- renderPrint({
      if (values$nula==FALSE){
     cat("Since you are using ",values$atext, " alternatives, you need ", values$atext, " strings separated by ", values$atext-1, "comma(s).")
@@ -359,17 +396,19 @@ server = function(input, output) {
     markdown(input$end.text, .noWS = TRUE)
   })
   
+  # Bliemer and Rose approach #
   output$check_screen <- renderUI({
     if(!input$serial) return(NULL)
     numericInput("serialno", "Start serial strategy after X responses:", "20")
   })
   
+  # Initialize the serial approach #
   observeEvent(input$serialno,{
     values$serialno <- input$serialno
   })
 
   
-  # DCE creator function  #
+  # DCE creator function - constructing a design  #
   creator <- function (niveles, nula, a, s, priors) {
     x <- 0
     codif <- c()
@@ -385,6 +424,7 @@ server = function(input, output) {
       pr <- (l-k)
     }
     I <- diag(length(priors))
+    
     sim <- MASS::mvrnorm(n=100, mu=priors, Sigma=I)
     if (nula==TRUE){
       a <- a+1
@@ -414,6 +454,7 @@ server = function(input, output) {
     }
   } #End of the creator
 
+  # Results of the design #
   output$table2 <- renderTable({
     niveles <- values$niveles
     nula <- values$nula
@@ -439,6 +480,7 @@ server = function(input, output) {
       }
     }
     dis <- creator(niveles, nula, a, s, priors)
+    values$derror <- dis[[1]]$error
     values$dis <- dis
     values$alt.cte <- dis[[3]]
     values$codif <- dis[[4]]
@@ -478,6 +520,15 @@ server = function(input, output) {
     values$downloadata <- cbind(rownames(values$des),values$des)
   })
   
+  # Print the D-error #
+  observeEvent(input$derror, {
+    error <- values$derror
+    output$error <- renderText({
+      print(paste("D(B)-error: ", error))
+    })
+  })
+  
+  # Decode the design #
   observeEvent(input$decode,{
     tablex <- values$tablex
     n <- nrow(tablex)
@@ -577,7 +628,6 @@ server = function(input, output) {
     }
     #by now
     data.dir = NULL
-    #end
     n.total <- s
     lower = c(-Inf, -Inf, -Inf, 0, 0, -Inf)
     bs <- seq(1, (nrow(des) - n.alts + 1), n.alts)
@@ -600,6 +650,7 @@ server = function(input, output) {
     if(sn==0){
     shinyjs::hide("nextbutton")
     }
+    
   })
 
   
@@ -608,14 +659,12 @@ server = function(input, output) {
     })
     
     
-    # When the OK button is clicked #
+    # When the OK button is clicked - survey #
     observeEvent(input$OK, {
-      ####nueva implementacin
       values$cs <- values$cs + 1
       if (values$cs>values$s+2){
         values$cs <- 1
       }
-      ####final nueva implementacin
       n.atts <- length(unlist(c(values$df[1])))
       atts <- values$df[,1]
       alts <- unlist(values$altnames)
@@ -682,7 +731,7 @@ server = function(input, output) {
           v <- unlist(l)
           return(v)
         }
-
+      # store the data #
       y.bin <<- Charbin(resp = resp, alts = alts, n.alts = n.alts)
       sdata[["bin.responses"]] <- y.bin
       sdata[["responses"]] <- resp
@@ -720,6 +769,7 @@ server = function(input, output) {
     if (sn <= n.total) {
       output$set.nr <- renderText(paste(c("choice set:", sn, "/", n.total)))
       shinyjs::hide("nextbutton")
+      shinyjs::hide("gotoresults")
     } else {
       output$set.nr <- renderText(NULL)
     }
@@ -760,20 +810,27 @@ server = function(input, output) {
         values$alldes <- rbind(values$alldes, values$des)
         output$end <- renderUI(markdown(input$end.text, .noWS = TRUE))
         shinyjs::show("nextbutton")
+        shinyjs::show("gotoresults")
         if(!is.null(input$serial)){
          shinyjs::hide("OK")
         }
     } else {
         output$end <- renderUI(NULL)
         shinyjs::hide("nextbutton")
+        shinyjs::hide("gotoresults")
     }
 
     })
     
+    # Move to the Results panel #
+    observeEvent(input$gotoresults, {
+      updateTabsetPanel(session,"panel",selected = "Results")
+    })
 
 
     # Show the results #
     output$results = renderDataTable({
+      saved_design <- data.frame()
       savedData <- data.frame()
       x <- nrow(values$alldes)/values$a
       gid <- rep(1:x, each=values$a)
@@ -865,6 +922,7 @@ server = function(input, output) {
       values$sncum <- sncum
     })
     
+    # code price levels as linear #
     observeEvent(input$linearprice, {
       tablex <- values$tablex
       tablex <- as.vector(unlist(tablex[1]))
@@ -908,6 +966,7 @@ server = function(input, output) {
       values$pricevars <- pricevars
     })
     
+    # estimate the conditional logit with the linear price #
     observeEvent(input$linpriceclogit, {
       results <- values$results
       titles <- values$titles
@@ -1003,6 +1062,9 @@ server = function(input, output) {
         s <- values$s
         ndes <- creator2(niveles, nula, a, s, priors)
         ndes <- ndes[[1]]$design
+        sdata[["design"]] <- values$des
+        sdata[["design"]] <- rbind(sdata[["design"]], ndes)
+        saved_design <<- sdata[["design"]]
         values$des <- ndes
         values$priors <- priors
       }}
