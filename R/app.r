@@ -1,1081 +1,1309 @@
 #' @export
 DCEtool <- function(){
   
-#Packages
-requireNamespace('shiny')
-requireNamespace('shinythemes')
-requireNamespace('survival')
-requireNamespace('DT')
-requireNamespace('idefix')
-requireNamespace('writexl')
-requireNamespace('shinyjs')
-requireNamespace('MASS')
-requireNamespace('stats')
-requireNamespace('shinycssloaders')
-requireNamespace('shinyglide')
-requireNamespace('htmltools')
-requireNamespace('stringr')
-requireNamespace('bslib')
-requireNamespace('mlogit')
 
-
-# Imports
-#' @importFrom shiny fluidPage
-#' @importFrom shiny navbarPage
-#' @importFrom shiny fluidRow
-#' @importFrom shiny column
-#' @importFrom shiny p
-#' @importFrom shiny em
-#' @importFrom shiny h3
-#' @importFrom shiny br
-#' @importFrom shiny HTML
-#' @importFrom shiny sidebarLayout
-#' @importFrom shiny sidebarPanel
-#' @importFrom shiny textInput
-#' @importFrom shiny numericInput
-#' @importFrom shiny actionButton
-#' @importFrom shiny icon
-#' @importFrom shiny checkboxInput
-#' @importFrom shiny mainPanel
-#' @importFrom DT dataTableOutput
-#' @importFrom shiny downloadButton
-#' @importFrom shiny textAreaInput
-#' @importFrom shiny tags
-#' @importFrom shiny textOutput
-#' @importFrom shinythemes shinytheme
-#' @importFrom shiny tabPanel
-#' @importFrom shiny hr
-#' @importFrom shiny h4
-#' @importFrom shiny tableOutput
-#' @importFrom shiny selectInput
-#' @importFrom shiny conditionalPanel
-#' @importFrom shinyjs useShinyjs
-#' @importFrom shiny verbatimTextOutput
-#' @importFrom shiny reactiveValues
-#' @importFrom shiny uiOutput
-#' @importFrom shiny observeEvent
-#' @importFrom utils head
-#' @importFrom idefix CEA
-#' @importFrom shiny downloadHandler
-#' @importFrom writexl write_xlsx
-#' @importFrom idefix Decode
-#' @importFrom shiny renderTable
-#' @importFrom shiny radioButtons
-#' @importFrom shiny renderText
-#' @importFrom survival clogit
-#' @importFrom shiny renderUI
-#' @importFrom stats as.formula
+  requireNamespace('shiny')
+  requireNamespace('rlist')
+  requireNamespace('shinythemes')
+  requireNamespace('shinyWidgets')
+  requireNamespace('mvtnorm')
+  requireNamespace('DT')
+  requireNamespace('shinycssloaders')
+  requireNamespace('writexl')
+  requireNamespace('readxl')
+  requireNamespace('rlist')
+  requireNamespace('idefix')
+  requireNamespace('shinyBS')
+  requireNamespace('survival')
+  requireNamespace('tidyr')
+  requireNamespace('mlogit')
+  requireNamespace('ggplot2')
+  requireNamespace('bslib')
+  requireNamespace('dfidx')
+  
+  
+#' @importFrom shinyBS bsModal
+#' @importFrom graphics barplot
+#' @importFron usethis use_pipe
+#' @importFrom magrittr %>%
 #' @importFrom survival strata
 #' @importFrom survival coxph
-#' @importFrom survival Surv
+#' @importFrom survival clogit
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 geom_bar 
+#' @importFrom ggplot2 geom_errorbar
+#' @importFrom ggplot2 scale_x_discrete
+#' @importFrom ggplot2 xlab
+#' @importFrom ggplot2 ylab
+#' @importFrom shiny actionButton
+#' @importFrom shiny checkboxGroupInput
 #' @importFrom shiny shinyApp
-#' @importFrom shiny renderPrint
-#' @importFrom DT renderDataTable
-#' @importFrom shinycssloaders withSpinner
-#' @importFrom shinyglide glide
-#' @importFrom shinyglide screen
-#' @importFrom shinyglide screenOutput
-#' @importFrom stringr str_replace_all
-#' @importFrom stringr str_sub
-#' @importFrom shiny markdown
-#' @importFrom bslib bs_theme
-#' @importFrom bslib bs_themer
-#' @importFrom mlogit mlogit.data
-#' @importFrom mlogit mlogit
-#' @importFrom shiny tabsetPanel
-#' @importFrom shinyhelper helper
-#' @importFrom shinyhelper observe_helpers
-#' @importFrom shiny updateTabsetPanel
+#' @importFrom rlist list.match
+  
+  #external variables
+  savechoices <- c()
+  resultados <- c()
+  num <- c()
+  y <- c()
+  se <- c()
 
-
-
-
-#### Initialisation ####
-# Data frame for attributes and levels #
-data <- data.frame(
-  name = character(),
-  lev = as.numeric(),
-  label = character()
-  )
-
-# Variables initialisation #
-Dataset <- data.frame()
-data.0 <- data
-niveles <- 0
-nula <- TRUE
-a <- 0
-s <- 0
-sn <- 0
-resp  <- vector("character")
-sdata <- vector(mode = "list")
-fulldes <- matrix()
-sncum <- 0
-nsn <- 0
-#### User interface ####
-ui <- fluidPage(theme=bs_theme(version = 4, bootswatch = "simplex"),
-      navbarPage(title=tags$div(tags$img(src="http://danielpereztr.es/wp-content/uploads/2021/07/Logo-0.3.1.png", height = '37.5px', width = '150px')),
-                 tabsetPanel(id ="panel",
-                  tabPanel(icon("igloo"), #Main page
-                           fluidRow(column(tags$img(src="http://danielpereztr.es/wp-content/uploads/2021/07/Granada.png",width="320px",height="260px"),width=1.1, HTML("<p style='text-align:center;'>Dpt. Applied Economics. University of Granada.</p>")),
-                                    column(
-                                      
-                                      br(),
-                                      p("DCEtool is an R package with a visual interface coded in Shiny that makes accessible good design properties to both new and experienced researchers.
-                                        DCEtool can create and decode DCEs, present a local interactive survey, and analyze the responses to the survey with discrete choice models.
-                                        DCEtool incorporates code from the idefix package to create the experimental design and present the interactive survey, from the survival 
-                                        and mlogit packages to analyze the results, and new code for the visual interface and data management.",style="text-align:justify;color:black;background-color:LightGrey;padding:15px;border-radius:10px"),
-                                      br(),
-                                      column(
-                                      p(actionButton(inputId = "create_DCE", label = "Create a DCE", icon = icon("puzzle-piece"), style="background-color: #D9230F; color: white"),
-                                      style="text-align:center;"),
-                                      width=12),
-                                      width=8),
-                                    ),
-                           
-                           hr(),
-                           HTML("<p style=text-align:center; font-family: times>Developed by Daniel P&eacute;rez-Troncoso</p>"),
-                           hr(),
-                           HTML("<p style=text-align:center; font-family: times>Please cite as Daniel P&eacute;rez-Troncoso (2021). Efficient and accessible DCEs: DCEtool.</p>")
-                  ),
-                  tabPanel("Parameters", #Parameters input
-                           sidebarLayout(
-                             sidebarPanel(
-                               h4("Attributes and levels"),
-                               textInput("name", "Name of the attribute", ""),
-                               numericInput("lev", "Number of levels", ""),
-                               helper(shiny::textInput("label", "Levels' name", ""),type = "markdown", icon ="question-circle", colour="Tomato", title = "Levels' names", content = "levnames"),
-                               actionButton(inputId = "add.button", label = "Add", icon = icon("plus")),
-                               actionButton(inputId = "delete.button", label = "Delete", icon = icon("minus")),
-                               hr(),
-                               helper(shiny::actionButton(inputId = "example.button", label = "Load example data", icon = icon("upload")),type = "markdown", icon ="question-circle", colour="Tomato", title = "Example data", content = "example"),
-                               hr(),
-                               h4("Other parameters"),
-                               numericInput("a", "No. of alternatives per choice set", ""),
-                               numericInput("s", "No. of choice sets per respondent", ""),
-                               checkboxInput(inputId = "nula", label = "Opt-out alternative"),
-                               checkboxInput(inputId = "advopt", label = "Advanced options"),
-                               conditionalPanel(condition = "input.advopt == '1'",
-                               helper(shiny::numericInput("seed", "Seed", value = 0), type = "markdown", icon = "question-circle", colour = "Tomato", title = "Random seed", content = "seed"),
-                               selectInput("priorstype", "Type of priors", c("Zero (pilot design)"="zero", "Personalized priors"="personalized")),
-                               conditionalPanel(
-                                 condition = "input.priorstype == 'personalized'",
-                                 helper(shiny::textInput('userpriors', 'Prior coefficients*',""),type = "markdown", icon ="question-circle", colour="Tomato", title = "Prior coefficients", content = "priors"),
-                               )),
-                               hr(),
-                               actionButton(inputId = "gen.button", label = "Save inputs", icon = icon("window-restore"))
-                             ),
-                             mainPanel(
-                               dataTableOutput('table')
-                             )
-                           )
-                  ),
-
-                  tabPanel(title="Design matrix",value="design", #Design output
-                           sidebarLayout(
-                             sidebarPanel(
-                               downloadButton("downloadData", "Download"),
-                               hr(),
-                               actionButton("derror", "Print the D-error"),
-                               br(),
-                               br(),
-                               actionButton("decode", "Decode the design matrix")
-                             ),
-                             mainPanel(
-                               shinycssloaders::withSpinner(dataTableOutput('table2'), type = 6, color="#D5220E"),
-                               verbatimTextOutput('error'),
-                               hr(),
-                               verbatimTextOutput('decoded')
-                             )
-                           )
-                  ),
-                 
-                 tabPanel("Survey wizard", #Survey assistant
-                          p("If the content is not displayed properly, resize the window. "),
-                          hr(),
-                          glide(
-                            screen(
-                              p("In this section you can set up a static survey.
-                                You can use this static survey to record responses
-                                to a discrete choice experiment on a single computer.
-                                This means that all respondents will have to answer
-                                the survey on this computer."),
-                              hr(),
-                              HTML("<p>Throughout the wizard you will be offered several configuration options.
-                                You can change the name of the alternatives, add an introductory text, 
-                                add a final text, and decide whether or not to 
-                                use the serial method for calculating the priors 
-                                of Bliemer & Rose (2010) <a href='https://doi.org/10.1108/9781849507738-006'>https://doi.org/10.1108/9781849507738-006</a></p>")
-                            ),
-                            
-                            screen(
-                              p("Enter the name of the alternatives separated by commas. For example, for choice sets with
-                                two alternatives, you could type 'Alternative 1, Alternative 2' (with no quotes)."),
-                              textOutput("alternatives"),
-                              hr(),
-                              textInput("altnames", "Alternative' names (in order and separated by commas)", "", width = '80%')
-                            ),
-                            screen(
-                            HTML("<p>Please write an introductory text for the survey. Use Markdown language, see guide <a href='https://www.markdownguide.org/cheat-sheet/'>here</a></p>"),
-                            tags$textarea(
-                              id = "intro.text", 
-                              rows = "8",
-                              cols = "100",
-                              "### Survey title \n \n This is a markdown paragraph. \n \n  The following is an unordered list \n \n * a bullet \n \n * another \n \n[Links](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a) work; so does *emphasis*.\n" 
-                            ),
-                            p('Preview:'),
-                            column(12, uiOutput('markdown'))
-                            ),
-                            screen(
-                              HTML("<p>Please write an introductory end for the survey. Use Markdown language, see guide <a href='https://www.markdownguide.org/cheat-sheet/'>here</a></p>"),
-                              tags$textarea(
-                                id = "end.text", 
-                                rows = "8",
-                                cols = "100",
-                                "End of the survey. Thank you. "
-                              ),
-                              p('Preview:'),
-                              column(12, uiOutput('markdownend'))
-                            ),
-                            screen(
-                              HTML("<p>Use Bliemer and Rose serial approach <a href='https://doi.org/10.1108/9781849507738-006'>https://doi.org/10.1108/9781849507738-006</a></p>"),
-                              checkboxInput("serial", "Use serial approach", FALSE)),
-                            screenOutput("check_screen"),
-                            screen(
-                              p("Push the button and move to the 'Survey' tab."),
-                              actionButton(inputId = "survey.button", label = " Create the survey", icon = icon("plus-circle"))
-                            )
-                          )
-                 ),
-
-                  tabPanel("Survey", #Survey phase
-                           mainPanel(
-                             tags$style(type="text/css", #Hiding some annoying errors
-                                        ".shiny-output-error { visibility: hidden; }",
-                                        ".shiny-output-error:before { visibility: hidden; }"
-                             ),
-                             column(12, align = 'center', textOutput("set.nr")),
-                             column(12, align = 'center', tableOutput("choice.set")),
-                             column(12, align = 'center', uiOutput('buttons')),
-                             column(12, uiOutput('intro.text')),
-                             column(12, uiOutput('end')),
-                             column(12, align = "center", actionButton("OK", "OK")),
-                             useShinyjs(),
-                             column(12, align = "center", actionButton("nextbutton", "Next respondent")),
-                             hr(),
-                             column(12, align = "center", actionButton("gotoresults", "Go to results")),
-
-                           )
-                  ),
-
-                  tabPanel("Results", #Results page
-                      sidebarLayout(
-                        sidebarPanel(
-                          downloadButton("downloadResults", "Download"),
-                          hr(),
-                          h4("Estimation"),
-                          br(),
-                          actionButton(inputId = "estimate", label = "Conditional logit"),
-                          br(),
-                          br(),
-                          actionButton(inputId = "mixed", label = "Rondom parameters logit"),
-                          br(),
-                          br(),
-                          checkboxInput("linearpricecheck", "Price as linear variable", FALSE),
-                          conditionalPanel(
-                            condition = "input.linearpricecheck ==1",
-                            uiOutput('pricevars'),
-                            hr(),
-                            uiOutput("remprice"),
-                            hr(),
-                            actionButton(inputId = "goprec", label = "Code the price attribute"),
-                            hr(),
-                            actionButton(inputId = "linpriceclogit", label = "Conditional logit with linear price")
-                          ),
-                        ),
-                        mainPanel(
-                          dataTableOutput('results'),
-                          verbatimTextOutput('model')
-                        )
+  ui <- shiny::navbarPage(
+    "DCEtool", id = 'inTabset',   
+    shiny::tabPanel("Home", value = "start",
+             shiny::fluidRow(
+               shiny::column(12,
+                 align = "center",
+                 htmltools::img(src = "assets/granada.png", width = "50%"),  # prefix + filename
+                 htmltools::p("Welcome to DCEtool. ",style="text-align:justify;color:black;background-color:LightGrey;padding:15px;border-radius:10px"),
+                 shiny::HTML("<p>Find more <a href = 'https://danielpereztr.github.io/DCEtool/'>here</a>.</p>"),
+                 shiny::HTML("<p>Please cite as P&eacute;rez-Troncoso (2022). Efficient and Accessible Discrete Choice Experiments: DCEtool (Version 1.0.0). danielpereztr.github.io/DCEtool</p>")
+               )
+             )
+             ), #Home tab
+    shiny::tabPanel("Design settings", value = "params", #Design settings tab
+      shiny::sidebarLayout(
+        shiny::sidebarPanel( #Inputs sidebar panel
+          shiny::numericInput('ats', "Number of attributes", 0),
+          shiny::uiOutput('dynamic'),
+          shiny::actionButton('loadats','Save attributes'),
+          htmltools::hr(),
+          shiny::uiOutput('altbut'),
+          shiny::uiOutput('csetbut'),
+          shiny::uiOutput('optcheck'),
+          shiny::uiOutput('bayescheck'),
+          shiny::uiOutput('savebut'),
+          htmltools::hr(),
+          shiny::uiOutput('priorsbut'),
+          shiny::uiOutput('seedbut'),
+          shiny::uiOutput('saveopt')
+        ),
+        shiny::mainPanel(
+          shiny::verbatimTextOutput('levelsnumber'),
+          shiny::verbatimTextOutput('errorscheck'),
+          shiny::uiOutput('gobut')
+        )
+      )
+    ),
+    shiny::tabPanel(title = "Design matrix", value = "desmattab", #Design matrix tab
+      shiny::sidebarLayout(
+        shiny::sidebarPanel( # Design matrix left tab
+          shiny::actionButton("gendesign", "Generate design"),
+          htmltools::br(),
+          htmltools::br(),
+          shiny::downloadButton("downloaddesing","Save design", icon = shiny::icon("download")), #save design
+          shiny::fileInput(inputId = "loaddesign",label = "", multiple = FALSE), #load design
+          shiny::actionButton("showdesdetails", "Show design details", icon = shiny::icon("eye")),
+          htmltools::br(),
+          htmltools::br(),
+          shiny::actionButton("writeatnames", "Name the attributes", icon = shiny::icon("braille")),
+          htmltools::br(),
+          htmltools::br(),
+          shiny::uiOutput("atnames"),
+          htmltools::br(),
+          shiny::uiOutput('levdropdown'),
+          shiny::uiOutput('levtext')
+        ),
+        shiny::mainPanel(    # Design matrix main panel
+          shiny::uiOutput("spinner"),
+          shiny::verbatimTextOutput("desdetails"),
+          shiny::verbatimTextOutput("printlevnames"),
+          shiny::uiOutput('modmatrix')
+        )
+      )
+    ),
+    shiny::tabPanel(title = "Create a survey", value = "createsurv", # Crear la encuesta
+      shiny::sidebarLayout(
+        shiny::sidebarPanel( # Sidebar Panel for survey creator
+          htmltools::p("Intro and end text: "),
+          shiny::textAreaInput("intro", "Introductory text in Markdown", rows = 3),
+          shiny::textAreaInput("outro", "End text in Markdown", rows = 3),
+          htmltools::hr(),
+          htmltools::p("Label each alternative: "),
+          shiny::uiOutput("labels"),
+          htmltools::hr()
+        ),
+        shiny::mainPanel(
+          htmltools::p("Survey preview"),
+          htmltools::hr(),
+          shiny::uiOutput("dispintrotext"),
+          htmltools::br(),
+          htmltools::hr(),
+          shiny::uiOutput('cstext'),
+          shiny::tableOutput("designcoded"),
+          shiny::uiOutput('radiodummy', width = '100%'),
+          htmltools::br(),
+          htmltools::hr(),
+          shiny::uiOutput("dispoutrotext"),
+        )
+      )
+    ),
+    shiny::tabPanel(title = "Survey",
+             shiny::fluidRow(
+               shiny::column(12,
+                      align = "center",
+                      shiny::uiOutput("serialui")
+               )
+             ),
+             shiny::fluidRow(
+               shiny::column(12,
+                      align = "center",
+                      shiny::actionButton(inputId = "popbut", "Launch survey"),
+                      htmltools::br(),
+                      htmltools::br(),
+                      shiny::uiOutput("resultsbut")
                       )
-                  )
-                 
-                 
-                 
-    ) #end of navpage
-    )) #end of ui
-
-server = function(input, output, session) {
-
-  
-  #helpers
-  observe_helpers(help_dir="vignettes/helpfiles")
-  
-  #redirect to 'Parameters'
-  observeEvent(input$create_DCE, {
-    updateTabsetPanel(session,"panel",selected = "Parameters")
-  })
-  
-  
-  
-  # Storage of changing variables #
-  values <- reactiveValues()
-  values$df <- data
-  
-  
-  # Table input for attributes and levels #
-  observeEvent(input$add.button,{
-    print(input$name)
-    print(input$lev)
-    print(input$label)
-    newRow <- data.frame(input$name, input$lev, input$label)
-    colnames(newRow)<-c("name", "lev", "label")
-    values$df <- rbind(values$df,newRow)
-    data.0 <- rbind(data.0,newRow)
-    values$data0 <- data.0
-    print(nrow(values$df))
-  })
-
-  # Delete last input in the table #
-  observeEvent(input$delete.button,{
-      values$df <- head(values$df,-1)
-    }
+             ),
+          shinyBS::bsModal("modalExample", "", "popbut", size = "large",
+              shiny::fluidRow(
+                shiny::column(12,
+                   align = "left",
+                   shiny::uiOutput("texts"),
+                ),
+                shiny::column(12,
+                   align = "center",
+                   shiny::tableOutput("css"),
+                   shiny::uiOutput("cssbut")  
+                ),
+                
+                shiny::column(12,
+                   align = "right",
+                   shiny::uiOutput('contsurv1')
+                 )
+                )
+               )
+    ),
+    shiny::tabPanel(title = "Results", value = "results",
+             shiny::sidebarLayout(
+               shiny::sidebarPanel(
+                 shiny::tabsetPanel(id = "restabs",
+                    shiny::tabPanel("Data",
+                          htmltools::br(),
+                             shiny::downloadButton("downloadresults","Save results", icon = shiny::icon("download")),
+                             shiny::fileInput(inputId = "loadresults",label = "", multiple = FALSE), #load results
+                             shiny::selectInput(
+                               inputId = "pricevarcoding",
+                               label = "Price variable coding",
+                               choices = c("Dummy coding" = "dumcod",
+                                           #"There is already a continuous price variable" = "already",
+                                           "Code price as continuous variable" = "cont")
+                             ),
+                             shiny::uiOutput("atpriceselect"),
+                             shiny::uiOutput("savethem"),
+                             shiny::uiOutput("pricelevbr")
+                             ),
+                    shiny::tabPanel("Estimation",
+                            htmltools::br(),
+                             shiny::selectInput("modelname", "Choose estimate", 
+                                         choices = c("Select a model" == "nullselect",
+                                                     "Conditional logit" = "clogit",
+                                                     "Mixed logit" = "mixlogit",
+                                                     "Willingness to pay" = "wtp",
+                                                     "Figures" = "figures")
+                                         ),
+                             shiny::uiOutput("modopt"),
+                             htmltools::hr(),
+                             shiny::uiOutput("modopt2")
+                             )
+                 )
+               ),
+               shiny::mainPanel(
+                 DT::DTOutput("restable"),
+                 shiny::verbatimTextOutput("clog"),
+                 shiny::plotOutput("figure")
+               )
+             )
+             ),
+    shiny::tabPanel(title = "About", 
+               shiny::fluidRow(
+                 shiny::column(12,
+                        align = "Left",
+                        htmltools::h3("About"),
+                        shiny::HTML("<p>This app was created by Daniel P&eacute;rez-Troncoso in 2021. Version 1.0.0 was released in April 2022.</p>"),
+                        shiny::HTML("<p>Please, if you use this app in your research, reference it as 'P&eacute;rez-Troncoso, D. (2022). DCEtool (1.0.0) [Software]. https://cran.r-project.org/package=DCEtool ' </p>"),
+                        shiny::HTML("<p>Find a guide in <a href = 'https://danielpereztr.github.io/posts/DCEtool/'>this link</a></p>"),
+                        htmltools::h3("Downloads"),
+                        shiny::plotOutput("downloads")
+                 )
+               )
+             )
   )
   
-
-  # Input an example data set #
-  observeEvent(input$example.button,{
-    exampledata <- data.frame(name=c("Effectiveness (%)", "Required doses", "Adverse events", "Price (???)"), lev=c(3, 2, 3, 3), label=c("70,80,90","1 dose,2 doses","1 in 1000 patients,1 in 500 patients,1 in 100 patients","100,150,200"))
-    values$df <- rbind(values$df, exampledata)
-    data.0 <- rbind(data.0, exampledata)
-  })
-
-  # Change the column names to the table #
-  output$table = renderDataTable({
-    tablex=as.data.frame(values$df)
-    colnames(tablex) <- c("Attribute", "No. of levels", "Levels' name")
-    values$tablex <- tablex
-    tablex
-  })
   
-
-  # Save inputs in changing variables #
-  observeEvent(input$gen.button,{
-    values$a <- input$a
-    values$atext <- input$a
-    values$s <- input$s
-    values$nula <- input$nula
-    values$niveles <- unlist(c(values$df[2]))
-    values$atnames <- unlist(c(values$df[1]))
-    values$levnames <- unlist(c(values$df[3]))
-    values$userpriors <- input$userpriors
-    values$userpriors <- unlist(strsplit(values$userpriors, split=","))
-    values$userpriors <- as.numeric(values$userpriors)
-    values$nsn <- 1
-    if(input$seed!=0){
-      values$seed <- input$seed
-      set.seed(values$seed)
-    }
-  })
-
-  # Text for the survey assistant #
-  output$alternatives <- renderPrint({
-     if (values$nula==FALSE){
-    cat("Since you are using ",values$atext, " alternatives, you need ", values$atext, " strings separated by ", values$atext-1, "comma(s).")
-     } else {
-       cat("Since you are using ",values$atext+1, " alternatives, you need ", values$atext+1, " strings separated by ", values$atext, "comma(s).")
-     }
-  })
-  
-  # Markdown intro text #
-  output$markdown <- renderUI({
-    markdown(input$intro.text, .noWS = TRUE)
-  })
-  
-  # Markdown end text #
-  output$markdownend <- renderUI({
-    markdown(input$end.text, .noWS = TRUE)
-  })
-  
-  # Bliemer and Rose approach #
-  output$check_screen <- renderUI({
-    if(!input$serial) return(NULL)
-    numericInput("serialno", "Start serial strategy after X responses:", "20")
-  })
-  
-  # Initialize the serial approach #
-  observeEvent(input$serialno,{
-    values$serialno <- input$serialno
-  })
-
-  
-  # DCE creator function - constructing a design  #
-  creator <- function (niveles, nula, a, s, priors) {
-    x <- 0
-    codif <- c()
-    while (x<length(niveles)){
-      codif <- append(codif, "D")
-      x <- x+1
-    }
-    l <- sum(niveles)
-    k <- length(niveles)
-    if (nula==TRUE){
-      pr <- (l-k+1)
-    } else {
-      pr <- (l-k)
-    }
-    I <- diag(length(priors))
+  server <- function(input, output, session){
     
-    sim <- MASS::mvrnorm(n=100, mu=priors, Sigma=I)
-    if (nula==TRUE){
-      a <- a+1
-      sim <- list(sim[,1:1], sim[, 2:(length(priors))])
-      t <- 0
-      u <- a-1
-      const <- c()
-      while(t<=u){
-        if (t<u){
-          const <- append(const,0)
-        } else {
-          const <- append(const,1)
-        }
-        t <- t+1
-      }
-      dis <- CEA(lvls=niveles, coding=codif, n.alts=a, n.sets=s, alt.cte=const,
-                 par.draws=sim, no.choice=TRUE, best=TRUE)
-    }
-    if (nula==FALSE){
-      dis <- CEA(lvls=niveles, coding=codif, n.alts=a, n.sets=s,
-                 par.draws=sim, no.choice=FALSE, best=TRUE)
-    }
-    if (nula==TRUE){
-    return(list(dis, codif, const, codif))
-    } else {
-    return(list(dis, codif, NULL, codif))
-    }
-  } #End of the creator
-
-  # Results of the design #
-  output$table2 <- renderTable({
-    niveles <- values$niveles
-    nula <- values$nula
-    a <- values$a
-    s <- values$s
-    up <- values$userpriors
-    if(!exists("up")){
-      priors <- values$userpriors
-    } else {
-      # zero priors
-      l <- sum(niveles)
-      k <- length(niveles)
-      if (nula==TRUE){
-        pr <- (l-k+1)
-      } else {
-        pr <- (l-k)
-      }
-      y <- 0
-      priors <- c()
-      while (y<pr){
-        priors <- append(priors,0)
-        y <- y+1
-      }
-    }
-    dis <- creator(niveles, nula, a, s, priors)
-    values$derror <- dis[[1]]$error
-    values$dis <- dis
-    values$alt.cte <- dis[[3]]
-    values$codif <- dis[[4]]
-    final <- dis[[1]]$design
-    values$des <- final
-    if (nula==TRUE){
-      a <- a+1
-      values$a <- a
-    }
-    
-    output$table2 = renderDataTable({
-      input$go.button
-      tablex <- values$tablex
-      d <- nrow(tablex)
-      i <- 1
-      titles <- c()
-      d <- nrow(tablex)
-      i <- 1
-      titles <- c()
-      while(i<d+1){
-        current <- tablex[3][i,]
-        current <- unlist(strsplit(current, ","))
-        current <- current[2:length(current)]
-        titles <- append(titles, current)
-        i <- i+1
-      }
-      if(nula==TRUE){
-        titles <- append("opt-out",titles)
-      }
-      titles <- gsub(" ", "-", titles)
-      colnames(final) <- titles
-      values$final1 <- final
-      final
-    })
-    
-    values$downloadata <- as.data.frame(values$des) #formatting the data to be downloaded
-    values$downloadata <- cbind(rownames(values$des),values$des)
-  })
-  
-  # Print the D-error #
-  observeEvent(input$derror, {
-    error <- values$derror
-    output$error <- renderText({
-      print(paste("D(B)-error: ", error))
-    })
-  })
-  
-  # Decode the design #
-  observeEvent(input$decode,{
-    tablex <- values$tablex
-    n <- nrow(tablex)
-    c <- 0
-    nivn <- tablex[,3]
-    lvls <- list()
-    while (c<n){
-      c <- c + 1
-      z <- strsplit(nivn[c], ",")[[1]]
-      lvls <- append(lvls,list(z))
-    }
-    dis <- values$dis
-    nula <- values$nula
-    a <- values$a
-    cte <- values$alt.cte
-    cod <- values$codif
-    if (nula==TRUE){
-    decoded <- Decode(des = dis[[1]]$design, n.alts = a ,lvl.names = lvls, alt.cte = c(0,0,1), coding = cod, no.choice = 3)
-    } else {
-    decoded <- Decode(des = dis[[1]]$design, n.alts = a ,lvl.names = lvls, coding = cod)
-    }
-    colnames(decoded$design) <- tablex[,1]
-    values$decoded <- decoded$design
-  })
-  
-  output$decoded <-  renderPrint({
-    decoded <- values$decoded
-    design <- decoded
-    a <- values$a
-    x <- 1
-    z <- 1
-    y <- nrow(design)
-    while (x < y){
-      s <- x+a-1
-      current <- design[x:s,]
-      print(paste("Choice set", z))
-      current <- t(current)
-      b <- 1
-      altnames <- c()
-      while(b < (a+1)){
-        an <- paste("Alternative ", b)
-        altnames <- append(altnames, an)
-        b <- b+1
-      }
-      colnames(current)<-altnames
-      prcurr <- print(current)
-      assign(paste("cs",z,sep=""), current)
-      x <- x+a
-      z <- z+1
-    }
-  })
-
-  # Download button #
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      paste("data-", Sys.Date(), ".xlsx", sep="")
-    },
-    content = function(file) {
-      write_xlsx(as.data.frame(values$downloadata), path = file)
-    }
-  )
-
-  # Create the survey when survey.button is clicked #
-  observeEvent(input$survey.button,{
-    values$cs <- 0
-    values$respcount <- 1
-    algorithm = "CEA"
-    values$altnames <- input$altnames
-    values$altnames <- strsplit(values$altnames, split=",")
-    sdata <- vector(mode = "list")
-    surveyData <- vector(mode = "list")
-    y.bin <- vector("numeric")
-    resp  <- vector("character")
-    n.atts <- length(unlist(c(values$df[1])))
-    n.alts <- values$a
-    atts <- values$atnames
-    n.levels <- length(unlist(c(values$df[2])))
-    choice.sets <- matrix(data = NA, nrow = s * a, ncol = n.atts)
-    values$choice.sets <- choice.sets
-    buttons <- NULL
-    nula <- values$nula
-    values$intro.text <- input$intro
-    values$end.text <- input$end
-    values$sn <- 0
-    if (nula==FALSE){
-      no.choice=NULL
-    } else {
-      no.choice <- length(values$alt.cte)
-    }
-    des <- values$des
-    n.init <- nrow(des) / n.alts
-    alt.cte <- values$alt.cte
-    if (is.null(alt.cte) || all(alt.cte == 0)) {
-      alt.cte <- rep(0, n.alts)
-      n.cte <- 0
-      cte.des <- NULL
-    }
-    #by now
-    data.dir = NULL
-    n.total <- s
-    lower = c(-Inf, -Inf, -Inf, 0, 0, -Inf)
-    bs <- seq(1, (nrow(des) - n.alts + 1), n.alts)
-    es <- c((bs - 1), nrow(des))[-1]
-
-    # added from the idefix package #
-    Rcnames <- function(n.sets, n.alts, alt.cte, no.choice) {
-      r.s <- rep(1:n.sets, each = n.alts)
-      r.a <- rep(1:n.alts, n.sets)
-      r.names <- paste(paste("set", r.s, sep = ""), paste("alt", r.a, sep = ""), sep = ".")
-      if(no.choice){
-        ncsek <- seq(n.alts, (n.sets * n.alts), n.alts)
-        r.names[ncsek] <- "no.choice"
-      }
-    }
-    rowcol <- Rcnames(n.sets = n.init, n.alts = n.alts, alt.cte = alt.cte, no.choice = FALSE)
-    rownames(des) <- rowcol[[1]]
-    fulldes <- des
-    
-    if(sn==0){
-    shinyjs::hide("nextbutton")
-    }
-    
-  })
-
-  
-    observeEvent(input$survey, {
-      shinyjs::click("OK")
-    })
-    
-    
-    # When the OK button is clicked - survey #
-    observeEvent(input$OK, {
-      values$cs <- values$cs + 1
-      if (values$cs>values$s+2){
-        values$cs <- 1
-      }
-      n.atts <- length(unlist(c(values$df[1])))
-      atts <- values$df[,1]
-      alts <- unlist(values$altnames)
-      n.alts <- values$a
-      des <- values$des
-      n.init <- nrow(des) / n.alts
-      n.total <- values$s
-      values$OK <- input$OK
-      values$sn <- sn
-      if (values$sn > n.total+1){
-      values$sn <- 0
-      } else {
-      values$sn <- sn
-      }
-      sn <<- sn + 1
-      values$sn <<- values$sn + 1
-      n.total <- values$s
-      choice.sets <- values$choice.sets
-      bs <- seq(1, (nrow(des) - n.alts + 1), n.alts)
-      es <- c((bs - 1), nrow(des))[-1]
-      Select <- function() {
-        if (sn <= n.total) {
-          if (sn <= n.init) {
-            set <- des[bs[sn]:es[sn], ]
-            le <- length(unlist(c(values$df[1])))
-            nam <- unlist(values$df[3])
-            labels <- vector(mode = "list", le)
-            m <- 0
-            while (m<le){
-              m <- m+1
-              labels[m] <- strsplit(nam[m], split=",")
-            }
-            if (values$nula==TRUE){
-              nu <- n.alts
-            } else {
-              nu <- NULL
-            }
-            choice.set <- Decode(des = set, n.alts = n.alts, lvl.names = labels, coding = values$codif,
-                                 alt.cte = values$alt.cte, c.lvls = NULL, no.choice = nu)[[1]]
-            colnames(choice.set) <- atts
-            rownames(choice.set) <-  unlist(values$altnames)
-            choice.set <- t(choice.set[ , 1:n.atts])
-          }
-        }
-      }
-      if (sn <= n.total ) {
-        output$choice.set <-  renderTable(Select(), rownames = TRUE) # Plot new choice set
-      }
-      if (sn > 1 && sn <= (n.total + 1)) {
-        resp  <<- c(resp, input$survey) # Store responses and design
+    # Check if there is a newer version in CRAN
+    shiny::observeEvent(input$inTabset == "start", {
+      db <- utils::available.packages(filters = "duplicates")
+      cranvers <- db[db[,1] == "DCEtool"][2]
+      thisvers <- utils::packageVersion("DCEtool")
+      if (cranvers == thisvers){
         
-        # function from the idefix package #
-        Charbin <- function (resp, alts, n.alts, no.choice = FALSE) {
-          map <- match(resp, alts)
-          l <- list()
-          for(i in 1:length(map)){
-            l[[i]] <- rep(0, n.alts)
-            if (no.choice) {
-              l[[i]][map[i] - 1] <- 1
-            } else {
-              l[[i]][map[i]] <- 1
-            }
-          }
-          v <- unlist(l)
-          return(v)
-        }
-      # store the data #
-      y.bin <<- Charbin(resp = resp, alts = alts, n.alts = n.alts)
-      sdata[["bin.responses"]] <- y.bin
-      sdata[["responses"]] <- resp
-      sdata[["desing"]] <- fulldes
-      sdata[["survey"]] <- choice.sets
-      sdata[["gid"]] <- rep(c(1:n.init), each=n.alts)
-      surveyData <<- sdata
-      values$surveyData <- surveyData
+      } else if (cranvers != thisvers) {
+        shiny::showNotification("There is a newer version of DCEtool on CRAN. Run install.packages('DCEtool') to update DCEtool.")
       }
-       if (sn > n.total) {
-         output$choice.set <-  renderTable(NULL)
-       }
     })
-
-    # Show options after first OK #
-    output$buttons <- renderUI({
-    n.atts <- length(unlist(c(values$df[1])))
-    n.alts <- values$a
-    values$n.alts <- n.alts
-    des <- values$des
-    n.total <- values$s
-    n.init <- nrow(des) / n.alts
-    values$n.init <- n.init
-    alts <- unlist(values$altnames)
-    buttons.text <- "Select your preferred option"
-    if (values$sn >= 1 && values$sn <= n.total) {
+    
+    #Close shiny 
+    session$onSessionEnded(function() {
+      shiny::stopApp()
+    })
+    
+    #change tab
+    shiny::observeEvent(input$create_DCE, {
+      shiny::updateTabsetPanel(session, 'inTabset', selected = "params")
+    })
+    
+    # Values across functions
+    values <- shiny::reactiveValues() 
+    
+    
+    # Download flag for later
+    values$downloadflag <- 0
+    # Choices storage for the survey
+    values$choices <- as.data.frame(matrix(ncol = 2, nrow = 0))
+    # Designstorage
+    values$designstor <- data.frame() 
+    
+    # Create as many inputs as attributes are
+    output$dynamic <- shiny::renderUI({
+      tags <- htmltools::tagList()
+      for (i in seq_len(input$ats)) {
+        tags[[i]] <- shiny::numericInput(paste0('at', i), 
+                                  paste0('Levels in attribute ', i),
+                                  0)
+      }
+      tags
+    })
+    
+    
+    
+    # Create the vector 'levels' with the attributes' levels
+    shiny::observeEvent(input$loadats, {
+      nats <- input$ats
+      levels <- c()
+      for (i in seq_len(nats)){
+        levels <- append(levels, eval(parse(text = paste0("input$at",i))))
+      }
+      values$levels <- levels
+      values$nats <- nats
       
-      return(list(radioButtons("survey", buttons.text, alts , inline = TRUE, selected = "None", width = "100%")))
-    }
-    })
-
-    # Set the choice set number #
-    observeEvent(input$OK, {
-    n.total <- values$s
-    if (sn <= n.total) {
-      output$set.nr <- renderText(paste(c("choice set:", sn, "/", n.total)))
-      shinyjs::hide("nextbutton")
-      shinyjs::hide("gotoresults")
-    } else {
-      output$set.nr <- renderText(NULL)
-    }
-    })
-    
-
-    # Intro text #
-    output$intro.text <- renderUI(markdown(input$intro.text, .noWS = TRUE))
-     observeEvent(input$OK, {
-       n.total <- values$s
-       if (sn!=sn+2){
-       output$intro.text <- renderUI(NULL)
-       shinyjs::hide("OK")
-       } 
-       if (values$cs == 0 | values$cs == values$s+2){
-         values$nsn <<- 0 
-         sn <<- 0 
-         output$intro.text <- renderUI(markdown(input$intro.text, .noWS = TRUE))
-         shinyjs::show("OK")
-       }
-     })
-
-     
-     
-    # End of the survey #
-    observeEvent(input$OK, {
-      
-    if (values$respcount == 1){
-      r <- 1
-    } 
-    if (values$respcount > 1){
-      r <- 2
-    }
-      
-    n.total <- values$s
-    vsn <- values$sn
-    if (values$cs == values$s+1) { # Display end text
-        values$alldes <- rbind(values$alldes, values$des)
-        output$end <- renderUI(markdown(input$end.text, .noWS = TRUE))
-        shinyjs::show("nextbutton")
-        shinyjs::show("gotoresults")
-        if(!is.null(input$serial)){
-         shinyjs::hide("OK")
-        }
-    } else {
-        output$end <- renderUI(NULL)
-        shinyjs::hide("nextbutton")
-        shinyjs::hide("gotoresults")
-    }
-
-    })
-    
-    # Move to the Results panel #
-    observeEvent(input$gotoresults, {
-      updateTabsetPanel(session,"panel",selected = "Results")
-    })
-
-
-    # Show the results #
-    output$results = renderDataTable({
-      saved_design <- data.frame()
-      savedData <- data.frame()
-      x <- nrow(values$alldes)/values$a
-      gid <- rep(1:x, each=values$a)
-      alt <- rep(c(1:values$n.alts), values$n.init)
-      results <- cbind(values$alldes,as.data.frame(values$surveyData[1]), as.data.frame(gid), as.data.frame(alt))
-      filas <- nrow(results)
-      pid <- rep(1:(filas/nrow(values$des)), each = nrow(values$des))
-      results <- cbind(results, pid)
-      results <- as.data.frame(results)
-      vars <- results[ , -((ncol(results) - 3):ncol(results))]
-      vars <- colnames(vars)
-      vars <- paste(vars, collapse ="+")
-      values$vars <- vars
-      tablex <- values$tablex
-      d <- nrow(tablex)
-      i <- 1
-      titles <- c()
-      while(i<d+1){
-        current <- tablex[3][i,]
-        current <- unlist(strsplit(current, ","))
-        current <- current[2:length(current)]
-        titles <- append(titles, current)
-        i <- i+1
-      }
-      if(values$nula==TRUE){
-        titles <- append("opt-out",titles)
-      }
-      titles <- str_replace_all(titles, "[^[:alnum:]]", " ")
-      titles <- append(titles, c("bin.responses", "gid", "alt", "pid"))
-      colnames(results) <- titles 
-      values$titles <- titles
-      savedData <<- results
-      values$results <- results
-    })
-
-    # estimate the clogit #
-    observeEvent(input$estimate, {
-      results <- values$results
-      titles <- values$titles
-      titles <- titles[1:(length(titles)-4)]
-      titles <- paste0('`',titles, '`')
-      titles <- paste(titles, collapse ="+")
-      model <- clogit(as.formula(paste("bin.responses~",titles)),strata(gid),data=results)
-      values$model <- summary(model)
-    })
-    
-    # estimate the mixlogit #
-    observeEvent(input$mixed, {
-      results <- values$results
-      titles <- values$titles
-      titles <- titles[1:(length(titles)-4)]
-      titles <- paste0('`',titles, '`')
-      x <- length(titles)
-      y <- 0
-      eqnormal <- c()
-      while(y<x){
-        eqnormal <- cbind(eqnormal, "n")
-      }
-      names(eqnormal) <- titles
-      titles <- paste(titles, collapse ="+")
-      DatosLX <- mlogit.data(results, shape = "long", alt.var = "alt", chid.var = "gid", id.var = "pid")
-      ResultadosLX <- mlogit(as.formula(paste("bin.responses~",titles, " | 0")), data=DatosLX, rpar=eqnormal, R=100, halton=NA, panel=TRUE)
-      values$model <- summary(ResultadosLX)
-    })
-    
-
-    
-
-    # display the results #
-    output$model <- renderPrint({
-      values$model
-    })
-
-    # download the data #
-    output$downloadResults <- downloadHandler(
-    filename = function() {
-      paste("results-", Sys.Date(), ".xlsx", sep="")
-    },
-    content = function(file) {
-      write_xlsx(as.data.frame(values$results), path = file)
-    })
-    
-    
-    # responses counter #
-    observeEvent(input$OK,{
-    if (sn > values$s){
-      sncum <<- sncum+1
-    }
-      values$sncum <- sncum
-    })
-    
-    # code price levels as linear #
-    observeEvent(input$linearprice, {
-      tablex <- values$tablex
-      tablex <- as.vector(unlist(tablex[1]))
-    })
-    
-    output$pricevars <- renderUI({
-      results <- values$results
-      results <- as.data.frame(results)
-      final1 <- as.data.frame(values$final1)
-      selectInput('selectprice', 'Select price variables', names(final1), multiple = TRUE)
-    })
-    
-    output$remprice <- renderUI({
-      numericInput("otherprice", "Omitted price", value=0)
-    })
-    
-    observeEvent(input$goprec,{
-      results <- values$results
-      pricevars <- input$selectprice
-      otherprice <- input$otherprice
-      results$pricevars <- 0
-      x <- length(pricevars)
-      i <- 1
-      while (i<=x){
-        current <- pricevars[i]
-        current <- results[,current]
-        current <- current*as.numeric(pricevars[i])
-        results$pricevars <- results$pricevars+current
-        i <- i+1
-      }
-      if(is.null(results$`opt out`)){
-        results$pricevars[results$pricevars == 0] <- otherprice
-      } else {
-        results$pricevars[results$pricevars == 0] <- otherprice
-        results$pricevars[results$`opt out` == 1] <- 0
-      } 
-      values$results <- results
-      output$results = renderDataTable({
-        values$results
+      # Print the number of attributes and levels
+      output$levelsnumber <- shiny::renderPrint({
+        cat("Design settings \nNumber of attributes: ", values$nats, "\nLevels per attribute: ", values$levels)
       })
-      values$pricevars <- pricevars
+      
+      #Ask the alternatives and csets after sending attributes
+      output$altbut <- shiny::renderUI({
+        shiny::numericInput("nalt", "Alternatives per choice set", value = 2, max = 5, min = 2)
+      })
+      
+      #Ask the number of choice sets
+      output$csetbut <- shiny::renderUI({
+        shiny::numericInput("nset", "Number of choice sets", value = 12, min = 4)
+      })
+      
+      #Checkbox if opt-out alternative
+      output$optcheck <- shiny::renderUI({
+        shinyWidgets::materialSwitch(inputId = "optout", label = "Opt-out alternative", value = FALSE, status = "danger")
+      })
+      
+      # Checkboxes to select the optimization procedure
+      output$bayescheck <- shiny::renderUI({
+        shinyWidgets::materialSwitch(inputId = "bayesian", label = "Bayesian design", status = "danger", value = FALSE)
+      })
+      
+      #Print the button to save the settings
+      output$savebut <- shiny::renderUI({
+        shiny::actionButton("saveset", "Save settings")
+      })
+    
+      
     })
     
-    # estimate the conditional logit with the linear price #
-    observeEvent(input$linpriceclogit, {
-      results <- values$results
-      titles <- values$titles
-      pricevars <- values$pricevars
-      titles2 <- titles[1:(length(titles)-4)]
-      titles2 <- grep(paste0(pricevars, collapse = "|"), titles2, invert = TRUE, value = TRUE)
-      titles2 <- paste0('`',titles2, '`')
-      titles2 <- paste(titles2, collapse ="+")
-      model <- clogit(as.formula(paste("bin.responses~",titles2,"+pricevars")),strata(gid),data=results)
-      values$model <- summary(model)
+    
+    
+    # Save and print settings
+    shiny::observeEvent(input$saveset,{
+      values$alts <- input$nalt
+      values$sets <- input$nset
+      values$optout <- input$optout
+      values$bayesian <- input$bayesian
+      output$levelsnumber <- shiny::renderPrint({
+        cat("Design settings \nNumber of attributes: ", values$nats, "\nLevels per attribute: ",
+            values$levels, "\nAlternatives per choice set: ", values$alts,
+            "\nNumber of sets: ", values$sets,
+            "\nNull alternative: ", values$optout, "\nBayesian priors: ",
+            values$bayesian)
+      })
+      
+      # Show button for priors 
+      output$priorsbut <- shiny::renderUI({
+        optout <- values$optout
+        levels <- values$levels
+        nats <- values$nats
+        null <- ifelse(optout == TRUE, 1, 0)
+        npar <- sum(levels)-nats+null
+        priors <- c()
+        for (x in seq_len(npar)){
+          priors <- append(priors, 0)
+        }
+        values$npar <- npar
+        shiny::textInput("priorsinput", "Prior coefficients", value = paste(shQuote(priors, type="cmd2"), collapse=", "))
+      })
+      
+      # show button for random seed
+      output$seedbut <- shiny::renderUI({
+        shiny::numericInput("randomseed", "Random seed", value = 9999)
+      })
+      
+      # save options button
+      output$saveopt <- shiny::renderUI({
+        shiny::actionButton("finalsave", "Save options")
+      })
     })
     
-
-    observeEvent(input$nextbutton, {
-      values$sn <- 1
-      values$respcount <- values$respcount+1
-      if(!is.null(values$serialno)){
-      if(values$serialno <= values$sncum){
+    # Print the final saved options
+    shiny::observeEvent(input$finalsave,{
+      values$priors <- as.numeric(strsplit(as.character(input$priorsinput), ",")[[1]])
+      values$seed <- input$randomseed
+      output$levelsnumber <- shiny::renderPrint({
+        cat("Design settings \nNumber of attributes: ", values$nats, "\nLevels per attribute: ",
+            values$levels, "\nAlternatives per choice set: ", values$alts,
+            "\nNumber of sets: ", values$sets,
+            "\nNull alternative: ", values$optout, "\nBayesian priors: ",
+            values$bayesian, "\nPriors: ", values$priors, "\nSeed: ", values$seed) 
+      })
+      
+      #Check errors 
+      output$errorscheck <- shiny::renderPrint({
+        cat("Error checker results:  \n")
+        if (length(values$levels) != values$nats){
+          cat("Some error occurred. Please restart DCEtool.\n")
+        } else if (values$sets < (sum(values$levels)-1)){
+          cat("The number of sets is not enough. Try with ", sum(values$levels)-1, " sets or more.\n")
+        } else if (length(values$priors) != values$npar){
+          cat("The number of priors does not correspond with the number of parameters. Try using ", values$npar, " prior parameters.")
+        } else {
+          cat("No errors found.")
+        }
         
-        # importing parameters #
-        x <- nrow(values$alldes)/values$a
-        gid <- rep(1:x, each=values$a)
-        alt <- rep(c(1:values$n.alts), values$n.init)
-        results <- cbind(values$alldes,as.data.frame(values$surveyData[1]), as.data.frame(gid), as.data.frame(alt))
-        filas <- nrow(results)
-        pid <- rep(1:(filas/nrow(values$des)), each = nrow(values$des))
-        results <- cbind(results, pid)
-        results <- as.data.frame(results)
-        vars <- results[ , -((ncol(results) - 3):ncol(results))]
-        vars <- colnames(vars)
-        vars <- paste(vars, collapse ="+")
-        values$vars <- vars
-        values$results <- results
-        results <- values$results
-        model <- clogit(as.formula(paste("bin.responses~",values$vars,"+strata(gid)")),data=results, method="efron")
-        coef <- summary(model)$coefficients[,1]
-        coef <- as.data.frame((cbind(coef, summary(model)$coefficients[,4])))
-        coef <- cbind(coef,ifelse(abs(coef[,2]) >= 1.96,1,0))
-        coef <- cbind(coef, coef[,1]*coef[,3])
-        priors <- coef[,4]
-        # end of importing parameters #
+      })
+      
+      # Button to create the design matrix
+      output$gobut <- shiny::renderUI({
+        shiny::actionButton("go", "Happy with the settings? Go to next step")
+      })
+    })
+    
+    
+    # Move to the next tab
+    shiny::observeEvent(input$go,{
+      #Move to the Design matrix tab
+      shiny::updateTabsetPanel(session, 'inTabset', selected = "desmattab")
+    })
+    
+    
+    shiny::observeEvent(input$gendesign,{
+      # Loader
+      output$spinner <- shiny::renderUI({
+        shinycssloaders::withSpinner(DT::dataTableOutput("design"))
+      })
+      
+      # Render the design table
+      output$design <- DT::renderDT({
         
-        # new creator function adapted for the sequential design #
-        creator2 <- function (niveles, nula, a, s, priors) {
-          x <- 0
-          codif <- c()
-          while (x<length(niveles)){
-            codif <- append(codif, "D")
-            x <- x+1
+        # Decide if bayesian
+        if (values$bayesian == TRUE){
+          alg = "cea"
+        } else {
+          alg = "fedorov"
+        }
+        
+        values$alg <- alg
+        
+        # Priors
+        if (values$bayesian == TRUE){
+          values$bpriors <- mvtnorm::rmvnorm(100, values$priors, diag(length(values$priors)))
+        } else {
+          values$bpriors <- values$priors
+        }
+        
+        
+        # Generate
+        design <- dce_toolbox(attributes = values$levels, csets = values$sets,
+                              alts = values$alts, nochoice = values$optout,
+                              priors = values$bpriors, alg = alg)
+        
+        values$design <- design$design
+        values$`D-error` <- design$`D-error`
+        values$details <- design$details
+        as.data.frame(design$design)
+      })
+    })
+    
+    # Download button
+    
+    output$downloaddesing <- shiny::downloadHandler(
+      filename = function() {"design.xlsx"},
+      content = function(file) {values$downloadflag <- values$downloadflag+1
+                                writexl::write_xlsx(values$deslist, file)}
+    )
+    
+    # Load saved design
+    shiny::observeEvent(input$loaddesign, {
+      #Spinner loader
+      output$spinner <- shiny::renderUI({
+        shinycssloaders::withSpinner(DT::dataTableOutput("design"))
+      })
+        # Design loader
+        output$design <- DT::renderDT({
+        if (!is.null(input$loaddesign)){
+          values$`D-error` <- as.numeric(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "Derror"))) #Update
+          values$details <- as.vector(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "details"))) #Update
+          values$nats <- as.numeric(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "nats"))) #Update
+          values$levels <- as.vector(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "levels"))) #Update
+          values$sets <- as.numeric(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "sets"))) #Update
+          values$optout <- as.logical(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "optout"))) #Update
+          values$priors <- as.vector(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "priors"))) #Update
+          values$alts <- as.numeric(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "alts"))) #Update
+          values$bayesian <- as.logical(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "bayesian")))
+          values$atnames <- as.vector(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "atnames")))
+          values$levnames <- as.list(unlist(readxl::read_excel(input$loaddesign$datapath, sheet = "levnames")))
+          values$design <- readxl::read_excel(input$loaddesign$datapath) # Print this one
+        }
+         
+      })
+        
+    })
+    
+    #Show design details
+    shiny::observeEvent(input$showdesdetails, {
+      output$desdetails <- shiny::renderPrint(
+        cat("Number of attributes: ", values$nats, "\nLevels per attribute: ",
+            values$levels, "\nAlternatives per choice set: ", values$alts,
+            "\nNumber of sets: ", values$sets,
+            "\nNull alternative: ", values$optout, "\nBayesian priors: ",
+            values$bayesian, "\nPriors: ", values$priors, "\nAttribute names: ", values$atnames,
+            "\nLevel names: ", unlist(values$levnames), "\nDetails:", values$details)
+      )
+    })
+    
+    # Create inputs for attribute names
+    shiny::observeEvent(input$writeatnames, { 
+      output$atnames <- shiny::renderUI({
+        tags <- htmltools::tagList()
+        for (i in seq_len(values$nats)) {
+          tags[[i]] <- shiny::textInput(paste0('atn', i), 
+                                    paste0('Name of attribute ', i),
+                                    value = paste0("atrib",i))
+        }
+        tags[[i+1]] <- shiny::actionButton("saveatnames", "Save names")
+        tags
+      })
+    })
+    
+    # Save the attribute names
+    shiny::observeEvent(input$saveatnames, {
+      atnames <- c()
+      for (i in seq_len(values$nats)){
+        atnames <- append(atnames, eval(parse(text = paste0("input$atn",i))))
+      }
+      values$atnames <- atnames
+      output$desdetails <- shiny::renderPrint(
+        cat("Number of attributes: ", values$nats, "\nLevels per attribute: ",
+            values$levels, "\nAlternatives per choice set: ", values$alts,
+            "\nNumber of sets: ", values$sets,
+            "\nNull alternative: ", values$optout, "\nBayesian priors: ",
+            values$bayesian, "\nPriors: ", values$priors, "\nAttribute names: ", values$atnames,
+            "\nLevel names: ", unlist(values$levnames), "\nDetails:", values$details)
+      )
+      # Create buttons with the attribute names
+      shiny::observeEvent(input$saveatnames, {
+        output$levdropdown <- shiny::renderUI({
+          shiny::selectInput("levdrop", "Change level names", as.list(atnames))
+        })
+        values$levnames <- list()
+      })
+      
+      # Level names
+      shiny::observeEvent(input$levdrop,{
+        pos <- match(input$levdrop, values$atnames)
+        output$levtext <- shiny::renderUI({
+          tags <- htmltools::tagList()
+          for (i in seq_len(values$levels[pos])){
+            tags[[i]] <- shiny::textInput(paste0("at",pos,"lev",i), paste0("Name level",i),
+                                   value = paste0("at",pos,"lev",i))
+            tags[[i+1]] <- shiny::actionButton(paste0("savelevs",pos), paste0("Save level ",pos))
           }
-          l <- sum(niveles)
-          k <- length(niveles)
-          if (nula==TRUE){
-            pr <- (l-k+1)
-          } else {
-            pr <- (l-k)
+          tags
+        })
+        
+        #save level names
+        levnames <- list()
+        shiny::observeEvent(eval(parse(text = paste0("input$savelevs",pos))),{
+          acum <- c()
+          for (i in seq_len(values$levels[pos])){
+            acum <- append(acum, eval(parse(text = paste0("input$at",pos,"lev",i))))
           }
-          y <- 0
-          I <- diag(length(priors))
-          sim <- MASS::mvrnorm(n=100, mu=priors, Sigma=I)
-          if (nula==TRUE){
-            a <- a
-            sim <- list(sim[,1:1], sim[, 2:(length(priors))])
-            t <- 0
-            u <- a-1
-            const <- c()
-            while(t<=u){
-              if (t<u){
-                const <- append(const,0)
-              } else {
-                const <- append(const,1)
+          values$levnames[[paste0(values$atnames[pos])]] <- acum
+          output$printlevnames <- shiny::renderPrint({
+            values$levnames
+          })
+          
+        # If all levels have a name, option to paste in the design matrix
+          if (length(values$levnames) == length(values$levels)){
+            output$modmatrix <- shiny::renderUI({
+              shiny::actionButton("modmatbut", "Change names in design matrix")
+            })
+          }
+          
+        })
+        
+      })
+      
+    })
+    
+    #Put names in the design matrix
+    shiny::observeEvent(input$modmatbut, {
+      levvector <- c()
+      for (i in 1:length(values$levnames)){
+        levvector <- append(levvector, rlist::list.match(values$levnames, values$atnames[i]))
+      }
+      if (values$optout == FALSE){
+      namvect <- append(c("task","alt"), unlist(lapply(levvector, function(x) x[-1])))
+      } else {
+      namvect <- append(c("task","alt", "optout"), unlist(lapply(levvector, function(x) x[-1])))  
+      }
+      print(namvect)
+      colnames(values$design) <- namvect
+      
+      #Print the table
+      output$design <- DT::renderDT({
+        values$design <- as.data.frame(values$design)
+      })
+      
+    })
+    
+  
+    # Save design and other design info (if design changes)
+    shiny::observeEvent(values$design, {
+      deslist <- list("design" = as.data.frame(values$design), # Save in a list to download in the excel
+                      "priors" = as.data.frame(values$priors),
+                      "alts" = as.data.frame(values$alts),
+                      "optout" = as.data.frame(values$optout),
+                      "Derror" = as.data.frame(values$`D-error`),
+                      "nats" = as.data.frame(values$nats),
+                      "sets" = as.data.frame(values$sets),
+                      "details" = as.data.frame(values$details),
+                      "levels" = as.data.frame(values$levels),
+                      "bayesian" = as.data.frame(values$bayesian),
+                      "atnames" = as.data.frame(values$atnames),
+                      "levnames" = as.data.frame(unlist(values$levnames)))
+      values$deslist <- deslist
+      atnames <- values$atnames
+      levnames <- values$levnames
+      #list the levnames correctly
+      if (length(values$levnames)>0 && length(levnames) > length(atnames)){
+        levnames2 <- list()
+        levnames <- as.vector(unlist(values$levnames))
+        for (i in 1:length(values$atnames)){
+          levnames2[[i]] <- levnames[1:values$levels[[i]]]
+          levnames <- levnames[-c(1:values$levels[i])]
+        } 
+        values$levnames2 <- levnames2
+        
+      } else {
+        values$levnames2 <- levnames
+      }
+      
+      # Generate another variable with +1 if null
+      if (values$optout == TRUE){
+        values$ncalts <- values$alts + 1
+      } else {
+        values$ncalts <- values$alts
+      }
+      
+      #Generate the vector indicating the null alternative
+      if (values$optout == TRUE){
+        values$nullvect <- c()
+        for (i in seq_len(values$alts)){
+          values$nullvect <- c(values$nullvect, 0)
+        }
+        values$nullvect <- c(values$nullvect, 1)
+      }
+      
+      #Generate a no.choice integer to indicate the position
+      if (values$optout == TRUE){
+        values$no.choice <- values$ncalts
+      } else {
+        values$no.choice <- NULL
+      }
+      
+    })
+    
+    
+    # survey creator
+    output$labels <- shiny::renderUI({
+      tags <- htmltools::tagList()
+      for (i in 1:values$ncalts) {
+        tags[[i]] <- shiny::textInput(paste0('alt_label_', i), 
+                                  paste0('Alternative ', i),
+                                  paste0('Alternative ',i))
+      }
+      tags[[i+1]] <- shiny::actionButton("savelabelsbut", "Save labels")
+      tags
+    })
+    
+    #Observe labels and save them
+    shiny::observeEvent(input$savelabelsbut, {
+    labels <- c()
+    a <- 0
+      for (i in seq_len(values$ncalts)){
+        a <- eval(parse(text = paste0("input$alt_label_",i)))
+        labels <- append(labels, a)
+      }
+    values$labels <- labels
+    })
+    
+    # Observe and print intro text
+    shiny::observeEvent(input$intro, {
+      output$dispintrotext <- shiny::renderUI({
+        shiny::markdown(input$intro, .noWS = TRUE)
+        })
+      values$intro <- input$intro
+    })
+    
+    #Observe and print end text
+    shiny::observeEvent(input$outro, {
+      output$dispoutrotext <- shiny::renderUI({
+        shiny::markdown(input$outro, .noWS = TRUE)
+      })
+      values$outro <- input$outro
+    })
+    
+    #Render the choice sets
+    shiny::observeEvent(input$savelabelsbut,{
+      output$designcoded <- shiny::renderTable({
+        #Create the coding vector
+        coding <- c()
+        for (i in seq_len(values$nats)){
+          coding <- append(coding, "D")
+        }
+        levnames2 <- values$levnames2
+        values$coding <- coding
+        print(coding)
+        decodes <- idefix::Decode(as.matrix(values$design[,3:ncol(values$design)]), values$ncalts, values$levnames2,
+                          coding = coding, no.choice = values$no.choice, alt.cte = values$nullvect)
+        decodes <- decodes$design
+        decodes <- cbind("set" = rep(1:values$sets, each = values$ncalts), decodes)
+        decodes <- decodes[decodes$set == 1,]
+        decodes <- decodes[,2:ncol(decodes)]
+        decodes <- t(decodes)
+        colnames(decodes) <- values$labels
+        decodes <- cbind("Attributes" = values$atnames,decodes)
+        decodes
+      })
+      
+      #show serial mode
+      
+      if (length(values$choices) == 2){
+        output$serialui <- shiny::renderUI({
+          shiny::radioButtons("serialmode", label = "Serial mode" ,choices = c("No" = "no",
+                                                                        "Bliemer & Rose (each respondent)" = "pure",
+                                                                        "Each 5 respondents" = "five"),
+                       inline = TRUE) 
+        })
+      }
+      
+      
+    })
+    
+    # Radio dummies
+    shiny::observeEvent(input$savelabelsbut, {
+      output$radiodummy <- shiny::renderUI(
+        shiny::radioButtons("nullinp", label = "", choices = values$labels, inline = TRUE)
+      )
+    })
+    
+    #Show cs text
+    shiny::observeEvent(input$savelabelsbut, {
+      output$cstext <- shiny::renderUI({
+        htmltools::h5("First choice set")
+      })
+    })
+    
+   
+    
+    # Decide when showing the Next > button
+    output$contsurv1 <- shiny::renderUI({
+      if (values$survclick != values$sets+1){ 
+        shiny::actionButton("contsurv", "Next >")
+      } else if (values$survclick == values$sets+1){
+        shiny::actionButton("nextresp", "Next respondent >")
+      }
+    })
+  
+    
+    
+    # Survey in popup
+    shiny::observeEvent(input$popbut, once = TRUE, {
+      values$survclick <- 0
+  
+      
+      shiny::observeEvent(input$contsurv, {
+        values$survclick <- values$survclick + 1
+      })
+      
+      shiny::observeEvent(values$survclick,{
+        if (values$survclick == 0){
+          output$css <- NULL
+          output$cssbut <- NULL
+          output$texts <- shiny::renderUI({
+            shiny::markdown(values$intro, .noWS = TRUE)
+          })
+        } else if (values$survclick > 0 && values$survclick <= values$sets){
+          output$texts <- NULL
+          output$css <- shiny::renderTable({
+            ### Load the table
+            decodes <- idefix::Decode(as.matrix(values$design[,3:ncol(values$design)]), values$ncalts, values$levnames2,
+                              coding = values$coding, no.choice = values$no.choice, alt.cte = values$nullvect)
+            decodes <- decodes$design
+            decodes <- cbind("set" = rep(1:values$sets, each = values$ncalts), decodes)
+            decodes <- decodes[decodes$set == values$survclick,]
+            decodes <- decodes[,2:ncol(decodes)]
+            decodes <- t(decodes)
+            colnames(decodes) <- values$labels
+            decodes <- cbind("Attributes" = values$atnames,decodes)
+            decodes
+          })
+          output$cssbut <- shiny::renderUI({
+            shiny::radioButtons("choices", label = "", choices = values$labels, inline = TRUE,
+                         selected = "0")
+          })
+        } else if (values$survclick == values$sets+1){
+          output$css <- NULL
+          output$cssbut <- NULL
+          output$texts <- shiny::renderUI({
+            shiny::markdown(values$outro, .noWS = TRUE)
+          })
+        }
+        
+        # Save responses to the survey
+        shiny::observeEvent(values$survclick, once = TRUE,{
+          if (values$survclick > 1 && (values$survclick < values$sets+2)){
+            current <- c("cs" = values$survclick-1, "choice" = input$choices)
+            values$choices <- rbind(values$choices, current)
+            current <- NULL
+          }
+          names(values$choices) <- c("task", "choice")
+          savechoices <<- values$choices
+        })
+        
+        if (length(values$choices > 0)){
+          output$resultsbut <- shiny::renderUI({
+            shiny::actionButton("resultsgo", "Analyze the results")
+          })
+        }
+        
+      }) # End of the function to show the choice sets
+      
+      # Count the number of respondents
+      shiny::observeEvent(input$contsurv, {
+        values$respondents <- floor(nrow(values$choices) / values$sets)
+        
+        # Add the design to the accumulated frame
+        if (values$respondents == 0){
+          values$designstor <- values$design
+        }
+        
+      })
+      
+      #Load old or new design depending on the mode
+      shiny::observeEvent(input$nextresp, {
+        if (input$serialmode == "no"){
+          values$survclick <- 0
+        } else if (input$serialmode == "pure"){
+          larray <- merge(cbind("num" = seq(len = nrow(savechoices)),savechoices), cbind("choice" = values$labels, "userselect" = seq(len = length(values$labels))), by = c("choice"), all =  TRUE)
+          larray <- larray %>% tidyr::drop_na(num)
+          larray <- larray[order(larray$num),]
+          larray$pid <- rep(1:(nrow(larray)/values$sets), len = nrow(savechoices), each = values$sets)
+          designstor <- values$designstor
+          designstor$pid <- rep(1:(nrow(designstor)/(values$ncalts*values$sets)), each = (values$sets*values$ncalts))
+          larray <- merge(designstor, larray, by = c("pid","task"), order = TRUE)
+          larray <- larray[order(larray$pid,larray$num),]
+          larray$choice <- NULL
+          larray$num <- NULL
+          larray$choice <- ifelse(larray$userselect == larray$alt, 1, 0)
+          larray$userselect <- NULL
+          cdesmat <- larray
+          #extract the regressors' name to input it in the model
+          regressors <- names(cdesmat[,4:(ncol(cdesmat)-1)])
+          regressors <- paste0('`',regressors, '`')
+          clog <- survival::clogit(stats::as.formula(paste0("choice ~ ",do.call(paste, c(as.list(regressors), sep = " + ")), " + strata(task)")),
+                         data = as.data.frame(cdesmat))
+          clog <- summary(clog)
+          clog$coefficients <- as.data.frame(clog$coefficients)
+          clog <- cbind(clog$coefficients[,1],clog$coefficients[,5])
+          clog <- cbind(clog,ifelse(clog[,2] <= 0.05, clog[,1], 0))
+          if(sum(clog[,3]) != 0){
+            for (i in 1:length(clog[,3])){
+              if (clog[,3][i] != 0){
+                values$priors[i] <- clog[,3][i]
               }
-              t <- t+1
             }
-            dis <- CEA(lvls=niveles, coding=codif, n.alts=a, n.sets=s, alt.cte=const,
-                       par.draws=sim, no.choice=TRUE, best=TRUE)
+            
+            # Decide if bayesian
+            if (values$bayesian == TRUE){
+              alg = "cea"
+            } else {
+              alg = "fedorov"
+            }
+            
+            values$alg <- alg
+            
+            # Priors
+            if (values$bayesian == TRUE){
+              values$bpriors <- mvtnorm::rmvnorm(100, values$priors, diag(length(values$priors)))
+            } else {
+              values$bpriors <- values$priors
+            }
+            
+            # Generate
+            design <- dce_toolbox(attributes = values$levels, csets = values$sets,
+                                  alts = values$alts, nochoice = values$optout,
+                                  priors = values$bpriors, alg = alg)
+            
+            design <- design$design
+            
+            #Replace the global design
+            tempnam <- colnames(values$design)
+            colnames(design) <- tempnam
+  
+            values$design <- design
           }
-          if (nula==FALSE){
-            dis <- CEA(lvls=niveles, coding=codif, n.alts=a, n.sets=s,
-                       par.draws=sim, no.choice=FALSE, best=TRUE)
-          }
-          if (nula==TRUE){
-            return(list(dis, codif, const, codif))
-          } else {
-            return(list(dis, codif, NULL, codif))
-          }
-        } #end of the new creation function
-        
-        
-        niveles <- values$niveles
-        nula <- values$nula
-        a <- values$a
-        s <- values$s
-        ndes <- creator2(niveles, nula, a, s, priors)
-        ndes <- ndes[[1]]$design
-        sdata[["design"]] <- values$des
-        sdata[["design"]] <- rbind(sdata[["design"]], ndes)
-        saved_design <<- sdata[["design"]]
-        values$des <- ndes
-        values$priors <- priors
-      }}
+        } else if (input$serialmode == "five"){
+          if ((values$respondents+1) %% 5 == 0){
+            larray <- merge(cbind("num" = seq(len = nrow(savechoices)),savechoices), cbind("choice" = values$labels, "userselect" = seq(len = length(values$labels))), by = c("choice"), all =  TRUE)
+            larray <- larray %>% tidyr::drop_na(num)
+            larray <- larray[order(larray$num),]
+            larray$pid <- rep(1:(nrow(larray)/values$sets), len = nrow(savechoices), each = values$sets)
+            designstor <- values$designstor
+            designstor$pid <- rep(1:(nrow(designstor)/(values$ncalts*values$sets)), each = (values$sets*values$ncalts))
+            larray <- merge(designstor, larray, by = c("pid","task"), order = TRUE)
+            larray <- larray[order(larray$pid,larray$num),]
+            larray$choice <- NULL
+            larray$num <- NULL
+            larray$choice <- ifelse(larray$userselect == larray$alt, 1, 0)
+            larray$userselect <- NULL
+            cdesmat <- larray
+            #extract the regressors' name to input it in the model
+            regressors <- names(cdesmat[,4:(ncol(cdesmat)-1)])
+            regressors <- paste0('`',regressors, '`')
+            clog <- survival::clogit(stats::as.formula(paste0("choice ~ ",do.call(paste, c(as.list(regressors), sep = " + ")), " + strata(task)")),
+                           data = as.data.frame(cdesmat))
+            clog <- summary(clog)
+            clog$coefficients <- as.data.frame(clog$coefficients)
+            clog <- cbind(clog$coefficients[,1],clog$coefficients[,5])
+            clog <- cbind(clog,ifelse(clog[,2] <= 0.05, clog[,1], 0))
+            if(sum(clog[,3]) != 0){
+              for (i in 1:length(clog[,3])){
+                if (clog[,3][i] != 0){
+                  values$priors[i] <- clog[,3][i]
+                }
+              }
+              
+              # Decide if bayesian
+              if (values$bayesian == TRUE){
+                alg = "cea"
+              } else {
+                alg = "fedorov"
+              }
+              
+              values$alg <- alg
+              
+              # Priors
+              if (values$bayesian == TRUE){
+                values$bpriors <- mvtnorm::rmvnorm(100, values$priors, diag(length(values$priors)))
+              } else {
+                values$bpriors <- values$priors
+              }
+              
+              
+              # Generate
+              design <- dce_toolbox(attributes = values$levels, csets = values$sets,
+                                    alts = values$alts, nochoice = values$optout,
+                                    priors = values$bpriors, alg = alg)
+              
+              design <- design$design
+              
+              #Replace the global design
+              tempnam <- colnames(values$design)
+              colnames(design) <- tempnam
+              
+              values$design <- design
+              }
+            } else {
+            values$survclick <- 0
+            }
+          
+        }
+        #Reload the choice sets
+        values$designstor <- rbind(values$designstor, values$design)
+        designstor <- values$designstor
+        values$survclick <- 0
+      })
       
-       if(is.null(values$serial)){
-         shinyjs::click("OK")
-       }
+  
+    }) # End of the popup
+    
+    # Move to results when click on analyze the survey
+    shiny::observeEvent(input$resultsgo, {
+      shiny::updateTabsetPanel(session, 'inTabset', selected = "results")
+      
+      #detect if the number of responses correspond to the designs stored
+      storedchoices <- nrow(savechoices)*values$ncalts
+      #if they are the same then reshape the dataset
+      if (storedchoices == nrow(values$designstor)){
+        #Reshape and present 
+        larray <- merge(cbind("num" = seq(len = nrow(savechoices)),savechoices), cbind("choice" = values$labels, "userselect" = seq(len = length(values$labels))), by = c("choice"), all =  TRUE)
+        larray <- larray[order(larray$num),]
+        larray$pid <- rep(1:(nrow(larray)/values$sets), len = nrow(savechoices), each = values$sets)
+        designstor <- values$designstor
+        designstor$pid <- rep(1:(nrow(designstor)/(values$ncalts*values$sets)), each = (values$sets*values$ncalts))
+        larray <- merge(designstor, larray, by = c("pid","task"), order = TRUE)
+        larray <- larray[order(larray$pid,larray$num),]
+        larray$choice <- NULL
+        larray$num <- NULL
+        larray$choice <- ifelse(larray$userselect == larray$alt, 1, 0)
+        larray$userselect <- NULL
+        cdesmat <- larray
+        resultados <<- cdesmat
+        cdesmat$gid <- rep(1:(nrow(cdesmat)/values$ncalts), each = values$ncalts)
+        values$cdesmat <- cdesmat
+        # Render the table with the results
+        output$restable <- DT::renderDT({
+          cdesmat
+        })
+        
+      } else if (storedchoices != nrow(values$designstor)){
+        #Cut the design storage if it's bigger than the response
+        values$designstor <- values$designstor[1:storedchoices,]
+        
+        #Now reshape the database
+        larray <- merge(cbind("num" = seq(len = nrow(savechoices)),savechoices), cbind("choice" = values$labels, "userselect" = seq(len = length(values$labels))), by = c("choice"), all =  TRUE)
+        larray <- larray[order(larray$num),]
+        larray$pid <- rep(1:(nrow(larray)/values$sets), len = nrow(savechoices), each = values$sets)
+        designstor <- values$designstor
+        designstor$pid <- rep(1:(nrow(designstor)/(values$ncalts*values$sets)), each = (values$sets*values$ncalts))
+        larray <- merge(designstor, larray, by = c("pid","task"), order = TRUE)
+        larray <- larray[order(larray$pid,larray$num),]
+        larray$choice <- NULL
+        larray$num <- NULL
+        larray$choice <- ifelse(larray$userselect == larray$alt, 1, 0)
+        larray$userselect <- NULL
+        cdesmat <- larray
+        resultados <<- cdesmat
+        cdesmat$gid <- rep(1:(nrow(cdesmat)/values$ncalts), each = values$ncalts)
+        values$cdesmat <- cdesmat
+        # Render the table with the results
+        output$restable <- DT::renderDT({
+          cdesmat
+        })
+        
+      }
       
     })
-
-}
-
-shinyApp(ui,server)
+    
+    # Download the coded design
+    output$downloadresults <- shiny::downloadHandler(
+      filename = function() {"results.xlsx"},
+      content = function(file) {
+      writexl::write_xlsx(values$cdesmat, file)}
+    )
+    
+    #Load a results
+    shiny::observeEvent(input$loadresults, {
+      # Design loader
+      output$restable <- DT::renderDT({
+          values$cdesmat <- readxl::read_excel(input$loadresults$datapath) #Update
+      })
+    })
+    
+    # Estimate a conditional logit
+    shiny::observeEvent(input$modelname, {
+      cdesmat <- values$cdesmat
+      output$modopt <- NULL
+      if (input$modelname == "clogit"){
+        output$modopt <- shiny::renderUI({
+          options <- htmltools::tagList(
+            shinyWidgets::pickerInput("dep", "Dependent variable", choices = colnames(cdesmat), multiple = FALSE),
+            shinyWidgets::pickerInput("ind", "Independent variables", choices = colnames(cdesmat), multiple = TRUE),
+            shinyWidgets::pickerInput("gid", "Group variable", choices = colnames(cdesmat), multiple = FALSE),
+            shiny::actionButton("goest", "Estimate")
+          )
+          options
+        })
+      } else if (input$modelname == "nullselect"){
+        output$modopt <- NULL
+      } else if (input$modelname == "mixlogit"){
+        output$modopt <- shiny::renderUI({
+          options <- htmltools::tagList(
+            shinyWidgets::pickerInput("dep", "Dependent variable", choices = colnames(cdesmat), multiple = FALSE),
+            shinyWidgets::pickerInput("ind", "Independent variables", choices = colnames(cdesmat), multiple = TRUE),
+            shinyWidgets::pickerInput("gid", "Group variable", choices = colnames(cdesmat), multiple = FALSE),
+            shinyWidgets::pickerInput("pid", "Individual identificator", choices = colnames(cdesmat), multiple = FALSE),
+            shinyWidgets::pickerInput("alt", "Alternative identificator", choices = colnames(cdesmat), multiple = FALSE),
+            shiny::actionButton("goest", "Estimate")
+          )
+          options
+        })
+      } else if (input$modelname == "wtp"){
+        output$modopt <- shiny::renderUI({
+          options <- htmltools::tagList(
+            shinyWidgets::pickerInput("pr", "Continuous 'price' variable", choices = rownames(values$clog$coefficients), multiple = FALSE),
+            shinyWidgets::pickerInput("rl", "Rest of levels", choices = rownames(values$clog$coefficients), multiple = TRUE),
+            shiny::actionButton("goest", "Estimate")
+          )
+          options
+        })
+      } else if (input$modelname == "figures"){
+        ui <- htmltools::tagList(
+          shinyWidgets::pickerInput("coefs", "Select levels to plot", choices = rownames(values$clog$coefficients), multiple = TRUE),
+        shiny::actionButton("plotit", "Create figure")
+        #numericInput("ngrup", "Number of groups (attributes)", value = 0)
+        )
+        output$modopt <- shiny::renderUI({
+          ui
+        })
+      }
+    })
+    
+    # Future implementation
+    # observeEvent(input$ngrup,{
+    #   output$modopt2 <- renderUI({
+    #     if (input$ngrup > 0) {
+    #       tags <- tagList()
+    #       for (i in seq_len(input$ngrup)) {
+    #         tags[[i]] <- textInput(paste0('gr', i),
+    #                                   paste0('Name group ', i))
+    #       }
+    #       tags[[i+1]] <- actionButton("plotit", "Create figure")
+    #       tags
+    #     } else {
+    #       actionButton("plotit", "Create figure")
+    #     }
+    #   })
+    # })
+    
+    # Estimations
+    shiny::observeEvent(input$goest, {
+      cdesmat <- values$cdesmat
+      if (input$modelname == "clogit"){
+        ind <- input$ind
+        ind <- paste0("`",ind, "`")
+        dep <- input$dep
+        dep <- paste0("`",dep, "`")
+        clog <- survival::clogit(stats::as.formula(paste0(paste0(dep," ~"),do.call(paste, c(as.list(ind), sep = " + ")), " + strata(",paste0(input$gid) ,")")),
+                       data = as.data.frame(cdesmat))
+        clog <- summary(clog)
+        #Render the results
+        output$clog <- shiny::renderPrint({
+          clog
+        })
+        clog <<- clog
+        values$clog <- clog
+        ### Mixlogit
+      } else if (input$modelname == "mixlogit"){
+        dep <- input$dep
+        dep <- paste0("`",dep, "`")
+        gid <- input$gid
+        alt <- input$alt
+        pid <- input$pid
+        ind <- input$ind
+        ind <- paste0("`",ind, "`")
+        rpar <- c()
+        for (i in 1:length(ind)){
+          rpar <- append(rpar, "n")
+        }
+        names(rpar) <- ind
+        ind <- input$ind
+        ind <- paste0("`",ind, "`")
+        cdesmat$choice <- as.logical(cdesmat$choice)
+        disMIX <- dfidx::dfidx(cdesmat, choice="choice", idx = list(c(paste0(gid), paste0(pid)), paste0(alt)), idnames= c("cs", "alt"))
+        modeloMIX <- try(mlogit::mlogit(stats::as.formula(paste0(paste0(dep," ~"),do.call(paste, c(as.list(ind), sep = " + ")), " | 0")), disMIX,
+                            rpar = rpar, R = 100, halton = NA))
+        clog <- summary(modeloMIX)
+        if (typeof(clog) == "character"){
+          ind <- input$ind
+          rpar <- c()
+          for (i in 1:length(ind)){
+            rpar <- append(rpar, "n")
+          }
+          names(rpar) <- ind
+          ind <- input$ind
+          ind <- paste0("`",ind, "`")
+          cdesmat$choice <- as.logical(cdesmat$choice)
+          disMIX <- dfidx::dfidx(cdesmat, choice="choice", idx = list(c(paste0(gid), paste0(pid)), paste0(alt)), idnames= c("cs", "alt"))
+          modeloMIX <- try(mlogit::mlogit(stats::as.formula(paste0(paste0(dep," ~"),do.call(paste, c(as.list(ind), sep = " + ")), " | 0")), disMIX,
+                                  rpar = rpar, R = 100, halton = NA))
+          clog <- summary(modeloMIX)
+          if (typeof(clog) == "character"){
+            clog <- "There is a problem related with the variable names. More likely, you combined level names with and without numbers and blank spaces. Save the design and modify the excel file by deleting all numbers and blanks from the variable names."
+          }
+        }
+        #Render the results
+        output$clog <- shiny::renderPrint({
+          clog
+        })
+        
+      } else if (input$modelname == "wtp") {
+        if (is.null(values$clog)){
+          output$clog <- shiny::renderPrint({
+            "First estimate the conditional logit"
+          })
+        } else {
+          reswtp <- as.data.frame(values$clog$coefficients)
+          results <- -reswtp[input$rl,]/as.numeric(reswtp[input$pr,][1])
+          output$clog <- shiny::renderPrint({
+            results
+          })
+        }
+      } 
+    })
+    
+    # If click on figures, render the graph based on the coefficients of the clogit and the user selection
+    shiny::observeEvent(input$modelname,{
+        if (input$modelname == "figures"){
+          shiny::observeEvent(input$plotit, {
+  
+              if (!is.null(values$clog)){
+                df <- data.frame(names = input$coefs, y = values$clog$coefficients[,1][input$coefs], se = values$clog$coefficients[,3][input$coefs])
+                values$df <- df
+                output$clog <- NULL
+                output$figure <- shiny::renderPlot(
+                  ggplot2::ggplot(df, aes(x=names, y=y)) + geom_bar(stat = "identity", fill="skyblue", alpha=0.7) + 
+                    geom_errorbar( ggplot2::aes(x=names, ymin=y-se, ymax=y+se), width=0.4, colour="orange", alpha=0.9, size=1.3)
+                )
+              } else {
+                output$clog <- shiny::renderPrint(
+                  "First, estimate a conditional logit model."
+                )
+              }  
+            
+          }) 
+        }
+    })
+    
+    # Change level names and axis names in the graph
+    shiny::observeEvent(input$plotit, {
+      tl <- htmltools::tagList()
+      for (i in 1:length(input$coefs)){
+        tl[[i]] <- shiny::textInput(inputId = paste0("coefplot", i), label = paste0(input$coefs[i]), value = paste0(input$coefs[i]))
+      }
+      tl[[i+1]] <- shiny::textInput(inputId = "xlabnew", "X axis")
+      tl[[i+2]] <- shiny::textInput(inputId = "ylabnew", "Y axis")
+      tl[[i+3]] <- actionButton(inputId = "changenames", label = "Change names")
+      output$modopt2 <- shiny::renderUI({
+        tl
+      })
+    })
+    
+    shiny::observeEvent(input$changenames, {
+      newnames <- c()
+      for (i in 1:length(input$coefs)){
+        newnames <- append(newnames, eval(parse(text = paste0("input$coefplot", i))))
+      }
+      output$figure <- shiny::renderPlot(
+        ggplot2::ggplot(values$df, aes(x=names, y=y)) + geom_bar(stat = "identity", fill="skyblue", alpha=0.7) + 
+          geom_errorbar( aes(x=names, ymin=y-se, ymax=y+se), width=0.4, colour="orange", alpha=0.9, size=2) +
+          scale_x_discrete(labels = newnames) + xlab(input$xlabnew) + ylab(input$ylabnew)
+      )
+    })
+    
+  
+    
+    shiny::observeEvent(input$pricevarcoding, {
+      if (input$pricevarcoding == "cont"){
+        cdesmat <- values$cdesmat
+        regressors <- names(cdesmat[,4:(ncol(cdesmat)-1)])
+        output$atpriceselect <- shiny::renderUI({
+          checkboxGroupInput(
+            inputId = "pricelevs",
+            label = "Select price levels",
+            choices = names(cdesmat)
+          )
+        })
+        output$savethem <- shiny::renderUI({
+          actionButton("savepricelevs", "Save price levels")
+        })
+      } else if (input$pricevarcoding == "already"){
+        cdesmat <- values$cdesmat
+        output$atpriceselect <- shiny::renderUI({
+          checkboxGroupInput(
+            inputId = "selectedcontvar",
+            label = "Select the continuous price variable",
+            choices = names(cdesmat)
+          )
+        })
+      }
+    })
+    
+    shiny::observeEvent(input$pricevarcoding, {
+      if (!is.null(input$selectedcontvar)){
+        cdesmat <- values$cdesmat
+        cdesmat$price <- eval(parse(text = paste0("cdesmat$selectedcontvar")))
+      }
+    })
+    
+    shiny::observeEvent(input$savepricelevs, {
+      pricevect <- input$pricelevs
+      output$pricelevbr <- shiny::renderUI({
+        tags <- htmltools::tagList()
+        for (i in 1:length(input$pricelevs)) {
+          tags[[i]] <- shiny::numericInput(paste0('pricelev', i), 
+                                    paste0(input$pricelevs[i]),
+                                    0)
+        }
+        omittedlev <- shiny::numericInput("omlev", "Omitted level (In monetary units)", value = 0)
+        tags <- htmltools::tagList(omittedlev, tags, actionButton("sprc", "Add variable to the data frame"))
+        tags
+      })
+    })
+    
+    shiny::observeEvent(input$sprc, {
+      cdesmat <- values$cdesmat
+      if (!is.null(cdesmat$cont_price)){
+        cdesmat$cont_price <- NULL
+      } else if (is.null(cdesmat$cont_price)){
+        pricelevs <- input$pricelevs
+        cdesmat$cont_price <- ifelse(rowSums(cdesmat[colnames(cdesmat) == pricelevs]) == 0, input$omlev, NA)
+        for (i in 1:length(pricelevs)){
+          inppric <- pricelevs[i]
+          cdesmat$cont_price <- ifelse(eval(parse(text = paste0("cdesmat$`", inppric,"`")))== 1, eval(parse(text = paste0("input$pricelev", i))) , cdesmat$cont_price)
+        }
+        cdesmat <- cbind(cdesmat[,1:(ncol(cdesmat)-2)], "cont_price" = cdesmat[,ncol(cdesmat):ncol(cdesmat)], "gid" = cdesmat[,(ncol(cdesmat)-1):(ncol(cdesmat)-1)])
+        values$cdesmat <- cdesmat
+      }
+      output$restable <- DT::renderDT({
+        values$cdesmat
+      })
+      output$pricelevbr <- NULL
+    })
+    
+    shiny::observe({
+      if (shiny::req(input$inTabset == "About")){
+        x <- adjustedcranlogs::adj_cran_downloads("DCEtool",when="last-month")[,c(1,3)]
+      }
+      output$downloads <- shiny::renderPlot({
+        if (!is.null(x)) {
+          barplot(count ~ date, data = x)
+        }
+      })
+        
+    })
+    
+    
+  }
+  
+  shinyApp(ui, server)
 }
