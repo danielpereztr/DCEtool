@@ -1,5 +1,5 @@
 <div style="text-align: center;">
-  <img src="vignettes/logo.png" width="50%">
+  <img src="vignettes/logo.png" style="width: 50%;">
 </div>
 
 ### Visit the original post
