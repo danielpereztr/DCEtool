@@ -2,6 +2,11 @@
   <img src="vignettes/logo.png" style="width: 50%;">
 </div>
 
+<p align="center">
+  <img src="vignettes/logo.png" width="50%" alt="Descripción alternativa">
+</p>
+
+
 ### Visit the original post
 Visit the original post in [https://danielpereztr.github.io/posts/DCEtool/](https://danielpereztr.github.io/posts/DCEtool/)
 
