@@ -1,6 +1,3 @@
-<div style="text-align: center;">
-  <img src="vignettes/logo.png" style="width: 50%;">
-</div>
 
 <p align="center">
   <img src="vignettes/logo.png" width="50%" alt="Descripción alternativa">
