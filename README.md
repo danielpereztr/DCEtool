@@ -1,4 +1,6 @@
-<img src="vignettes/logo.png" width="50%">
+<div style="text-align: center;">
+  <img src="vignettes/logo.png" width="50%">
+</div>
 
 ### Visit the original post
 Visit the original post in [https://danielpereztr.github.io/posts/DCEtool/](https://danielpereztr.github.io/posts/DCEtool/)
