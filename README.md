@@ -1,5 +1,5 @@
 
-![](vignettes/logo.png){width=50%}
+![](vignettes/logo.png)
 
 ### Visit the original post
 Visit the original post in [https://danielpereztr.github.io/posts/DCEtool/](https://danielpereztr.github.io/posts/DCEtool/)
