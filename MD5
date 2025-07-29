@@ -1,0 +1,14 @@
+2db2ed745a539eb5483da5d95b025484 *DESCRIPTION
+7d2b6211300a62762f5862984c9d2eab *NAMESPACE
+03ecf13eae412d8df6d8c27bc3038edb *R/app.R
+10ebc33871af5d3469949cfec53632ee *R/dce_toolbox.R
+1ecfd8a588bab941ef2da7a06a90b17d *R/rlist.R
+469c477578cda5df31f98132c5e1f7f0 *R/zzz.R
+c86397a4bacdce9920a3cbbf3b3bd672 *build/vignette.rds
+87e27bfc5246f96d82c25f430333e972 *inst/assets/granada.png
+d96bb5ab5e1d1fddac0effae0431146b *inst/doc/DCEtool.Rmd
+b0221a82eaa76d37459767cb34af0269 *inst/doc/DCEtool.html
+04f832e10b089ff9c538cdf9db353a2a *man/DCEtool.Rd
+d8472d2d6c7e47e6accf1e233859b9b5 *man/dce_toolbox.Rd
+8736a93b30c3a288388218e374852810 *man/list.match.Rd
+d96bb5ab5e1d1fddac0effae0431146b *vignettes/DCEtool.Rmd

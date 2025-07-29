@@ -4,7 +4,6 @@ DCEtool <- function(){
 
   requireNamespace('shiny')
   requireNamespace('rlist')
-  requireNamespace('shinythemes')
   requireNamespace('shinyWidgets')
   requireNamespace('mvtnorm')
   requireNamespace('DT')
@@ -18,13 +17,18 @@ DCEtool <- function(){
   requireNamespace('tidyr')
   requireNamespace('mlogit')
   requireNamespace('ggplot2')
-  requireNamespace('bslib')
   requireNamespace('dfidx')
-  
-  
+  requireNamespace('remotes')
+  requireNamespace('shinyhelper')
+  requireNamespace("httr")
+  requireNamespace("markdown")
+  requireNamespace("shinyjs")
+  requireNamespace("ggplot2")
+  requireNamespace("htmltools")
+
 #' @importFrom shinyBS bsModal
 #' @importFrom graphics barplot
-#' @importFron usethis use_pipe
+#' @importFrom usethis use_pipe
 #' @importFrom magrittr %>%
 #' @importFrom survival strata
 #' @importFrom survival coxph
@@ -39,102 +43,264 @@ DCEtool <- function(){
 #' @importFrom shiny checkboxGroupInput
 #' @importFrom shiny shinyApp
 #' @importFrom rlist list.match
-  
+#' @importFrom remotes install_github
+#' @importFrom shinycssloaders withSpinner
+#' @importFrom shinyhelper helper
+#' @importFrom ggplot2 ggplot
+#' @importFrom shiny tagList tags renderUI renderPlot reactive observe observeEvent reactiveVal icon hr uiOutput
+#' @importFrom htmltools br
+#' @importFrom shiny invalidateLater
+#' @importFrom ggplot2 geom_col labs theme_minimal theme element_text margin element_line element_blank
+
   #external variables
   savechoices <- c()
   resultados <- c()
   num <- c()
   y <- c()
   se <- c()
-
+  notifications_url <- "https://raw.githubusercontent.com/danielpereztr/dcetool_notifications/main/notifications.md"
+  
+  #external packages
+  
   ui <- shiny::navbarPage(
-    "DCEtool", id = 'inTabset',   
-    shiny::tabPanel("Home", value = "start",
-             shiny::fluidRow(
-               shiny::column(12,
-                 align = "center",
-                 htmltools::img(src = "assets/granada.png", width = "50%"),  # prefix + filename
-                 htmltools::p("Welcome to DCEtool. ",style="text-align:justify;color:black;background-color:LightGrey;padding:15px;border-radius:10px"),
-                 shiny::HTML("<p>Find more <a href = 'https://danielpereztr.github.io/DCEtool/'>here</a>.</p>"),
-                 shiny::HTML("<p>Please cite as P&eacute;rez-Troncoso (2022). Efficient and Accessible Discrete Choice Experiments: DCEtool (Version 1.0.0). danielpereztr.github.io/DCEtool</p>")
-               )
-             )
-             ), #Home tab
+    title = htmltools::div(
+      htmltools::img(src = "assets/logo.png", height = "35px", style = "display:inline; margin-right:10px; vertical-align:middle;"),
+      htmltools::span("DCEtool", style = "display:inline; vertical-align:middle; font-size:20px; font-weight:bold; color:white;"),
+      htmltools::div(
+        style = "position:relative; display:inline-block;",
+        actionButton(
+          inputId = "notif_bell",
+          label = NULL,
+          icon = shiny::icon("bell"),
+          style = "background:transparent; border:none; color:white; font-size:15px; margin-right:12px;",
+          title = "Show notifications"
+        ),
+        htmltools::tags$span(
+          id = "notif_badge",
+          class = "badge badge-danger",
+          style = "position:absolute;top:-8px;right:-10px;display:none;z-index:10;",
+          "0"
+        )
+      ),
+      shinyjs::useShinyjs(),
+      htmltools::tags$script(htmltools::HTML("
+      $(document).ready(function() {
+        // Funcion para alternar notificaciones con animacion
+        function toggleNotifications() {
+          var dropdown = $('#notif_dropdown');
+          if(dropdown.hasClass('showing')) {
+            dropdown.removeClass('showing');
+            setTimeout(function() { dropdown.hide(); }, 300);
+          } else {
+            dropdown.show();
+            setTimeout(function() { dropdown.addClass('showing'); }, 10);
+          }
+        }
+        
+        // Cerrar notificaciones al hacer clic fuera
+        $(document).on('click', function(e) {
+          if (!$(e.target).closest('#notif_dropdown, #notif_bell').length) {
+            var dropdown = $('#notif_dropdown');
+            if(dropdown.hasClass('showing')) {
+              dropdown.removeClass('showing');
+              setTimeout(function() { dropdown.hide(); }, 300);
+            }
+          }
+        });
+        
+        // Alternar visibilidad al hacer clic en la campana
+        $('#notif_bell').on('click', function(e) {
+          e.stopPropagation();
+          toggleNotifications();
+        });
+        
+        // Animacion para nuevas notificaciones
+        Shiny.addCustomMessageHandler('newNotification', function(n) {
+          if(n > 0) {
+            $('#notif_badge').text(n).addClass('new-notification').show();
+            setTimeout(function() {
+              $('#notif_badge').removeClass('new-notification');
+            }, 1000);
+          }
+        });
+      });
+      
+      Shiny.addCustomMessageHandler('updateNotifBadge', function(n) {
+        if(n > 0) {
+          $('#notif_badge').text(n).show();
+        } else {
+          $('#notif_badge').hide();
+        }
+      });
+    ")),
+      
+      shiny::absolutePanel(
+        id = "notif_dropdown",
+        top = 60, right = 30, width = 360, draggable = FALSE,
+        style = "display:block; z-index:1001; background:white; box-shadow:0 5px 20px rgba(0,0,0,0.15); border-radius:10px; padding:0; border:1px solid #eee;",
+        htmltools::div(
+          style = "border-bottom:1px solid #eee; padding:15px 20px; display:flex; align-items:center; font-weight:bold;",
+          shiny::icon("bell", style = "margin-right:10px; color:#666;"),
+          "Notifications"
+        ),
+        htmltools::div(
+          style = "max-height:370px; overflow-y:auto; padding:15px 20px;",
+          shiny::htmlOutput("notificationsContent")
+        )
+      )
+    ),
+    id = 'inTabset',
+    header = tagList(
+      shiny::includeCSS(system.file("www/custom.css", package = "DCEtool"))
+    ),
+    shiny::tabPanel(
+      "Home", value = "start",
+      shiny::fluidRow(
+        shiny::column(
+          width = 8, offset = 2,
+          align = "center",
+          htmltools::div(
+            style = "background:#f4f8fd; padding:28px 32px 18px 32px; border-radius:20px; margin-bottom:28px; box-shadow:0 2px 12px #0001;",
+            htmltools::img(src = "assets/logo.png", height = "48px", style = "margin-bottom:14px; border-radius:9px;"),
+            htmltools::h2("Welcome to DCEtool", style = "font-weight:bold; color:#2c3e50; margin-bottom:14px;"),
+            htmltools::p(
+              style="font-size:17px; color:#444; margin-bottom:18px;",
+              htmltools::HTML("<b>DCEtool</b> is a graphical interface in R for designing and analyzing <b>Discrete Choice Experiments (DCEs)</b>. Easily generate efficient designs, preview and deploy surveys, and analyze results - all without coding.")
+            ),
+            htmltools::tags$ul(
+              style = "text-align:left; font-size:15px; color:#333; margin-left:2em; margin-bottom:18px;",
+              htmltools::tags$li(tags$b("No coding required:"), " Intuitive, guided workflow for all steps."),
+              htmltools::tags$li(tags$b("Efficient designs:"), " Supports Bayesian and classical algorithms."),
+              htmltools::tags$li(tags$b("Survey preview:"), " Instantly preview and test your questionnaire."),
+              htmltools::tags$li(tags$b("Built-in analysis:"), " Estimate models and visualize results directly."),
+              htmltools::tags$li(tags$b("Export:"), " Download designs and results as Excel files.")
+            )
+            ,
+            htmltools::div(
+              style = "display: flex; justify-content: center; gap: 20px; margin-bottom:12px;",
+              shiny::actionButton("create_new_dce", "Create a new DCE", style = "padding:8px 20px; font-weight:600; border-radius:8px; font-size:16px; background:#1676d2; color:white; border:none;"),
+              shiny::actionButton("load_data", "Load your data", style = "padding:8px 20px; font-weight:600; border-radius:8px; font-size:16px; background:#ededed; color:#333; border:none;")
+            ),
+            htmltools::div(
+              style="margin-top:10px; font-size:15px; color:#666;",
+              "Find more information in the ",
+              htmltools::tags$a("user guide", href = "https://danielpereztr.github.io/posts/DCEtool/", target = "_blank"),
+              " or visit the ",
+              htmltools::tags$a("About", href = "#", onclick = "Shiny.setInputValue('inTabset', 'About', {priority:'event'});"),
+              " tab."
+            ),
+            htmltools::div(
+              style="margin-top:10px; font-size:14px; color:#888;",
+              "Please cite as P\u00e9rez-Troncoso (2022). Efficient and Accessible Discrete Choice Experiments: DCEtool (Version 1.2.0). ",
+              htmltools::tags$a(href = "https://danielpereztr.github.io/posts/DCEtool", target = "_blank", "danielpereztr.github.io/posts/DCEtool")
+            )
+          ),
+          # Caja tipo promo ChoiceLab (opcional, solo si quieres tambien en home)
+          htmltools::div(
+            style = "background:#e7f3fe; padding:18px 22px; border-radius:14px; margin-top:16px; border-left:6px solid #1676d2; display: inline-block; text-align: left;",
+            htmltools::tags$b("Need an online DCE platform? "),
+            htmltools::span("Try "),
+            htmltools::tags$a("ChoiceLab", href="https://cognitur.net/cl", target="_blank"),
+            htmltools::span(" by Cognitur to create, share, and analyze DCEs online. "),
+            htmltools::tags$a("Learn more", href="https://cognitur.net", target="_blank")
+          )
+        )
+      )
+    )
+    , #Home tab
     shiny::tabPanel("Design settings", value = "params", #Design settings tab
       shiny::sidebarLayout(
-        shiny::sidebarPanel( #Inputs sidebar panel
-          shiny::numericInput('ats', "Number of attributes", 0),
-          shiny::uiOutput('dynamic'),
-          shiny::actionButton('loadats','Save attributes'),
-          htmltools::hr(),
-          shiny::uiOutput('altbut'),
-          shiny::uiOutput('csetbut'),
-          shiny::uiOutput('optcheck'),
-          shiny::uiOutput('bayescheck'),
-          shiny::uiOutput('savebut'),
-          htmltools::hr(),
-          shiny::uiOutput('priorsbut'),
-          shiny::uiOutput('seedbut'),
-          shiny::uiOutput('saveopt')
+        shiny::sidebarPanel(
+          htmltools::div(
+            style = "background:#f8f9fa; padding:22px 20px 12px 20px; border-radius:18px; margin-bottom:28px; box-shadow:0 2px 10px #0001;",
+            shinyhelper::helper(
+              shiny::numericInput("ats", "Number of attributes", value = 0),
+              type = "inline",
+              content = "The number of attributes determines..."
+            ),
+            shiny::uiOutput('dynamic'),
+            shiny::actionButton('loadats','Save attributes'),
+            htmltools::hr(),
+            shiny::uiOutput('altbut'),
+            shiny::uiOutput('csetbut'),
+            shiny::uiOutput('optcheck'),
+            shiny::uiOutput('bayescheck'),
+            shiny::uiOutput('savebut'),
+            htmltools::hr(),
+            shiny::uiOutput('priorsbut'),
+            shiny::uiOutput('seedbut'),
+            shiny::uiOutput('saveopt')
+          )
         ),
         shiny::mainPanel(
-          shiny::verbatimTextOutput('levelsnumber'),
-          shiny::verbatimTextOutput('errorscheck'),
-          shiny::uiOutput('gobut')
+          htmltools::div(
+            style = "background:#f4f8fd; padding:26px 28px 18px 28px; border-radius:20px; margin-bottom:28px; box-shadow:0 2px 12px #0001;",
+            shiny::verbatimTextOutput('levelsnumber'),
+            shiny::verbatimTextOutput('errorscheck'),
+            shiny::uiOutput('gobut')
+          )
         )
       )
     ),
     shiny::tabPanel(title = "Design matrix", value = "desmattab", #Design matrix tab
       shiny::sidebarLayout(
-        shiny::sidebarPanel( # Design matrix left tab
-          shiny::actionButton("gendesign", "Generate design"),
-          htmltools::br(),
-          htmltools::br(),
-          shiny::downloadButton("downloaddesing","Save design", icon = shiny::icon("download")), #save design
-          shiny::fileInput(inputId = "loaddesign",label = "", multiple = FALSE), #load design
-          shiny::actionButton("showdesdetails", "Show design details", icon = shiny::icon("eye")),
-          htmltools::br(),
-          htmltools::br(),
-          shiny::actionButton("writeatnames", "Name the attributes", icon = shiny::icon("braille")),
-          htmltools::br(),
-          htmltools::br(),
-          shiny::uiOutput("atnames"),
-          htmltools::br(),
-          shiny::uiOutput('levdropdown'),
-          shiny::uiOutput('levtext')
+        shiny::sidebarPanel(
+          htmltools::div(
+            style = "background:#f8f9fa; padding:22px 20px 12px 20px; border-radius:18px; margin-bottom:28px; box-shadow:0 2px 10px #0001;",
+            uiOutput("desmatrix_controls")
+          )
         ),
-        shiny::mainPanel(    # Design matrix main panel
-          shiny::uiOutput("spinner"),
-          shiny::verbatimTextOutput("desdetails"),
-          shiny::verbatimTextOutput("printlevnames"),
-          shiny::uiOutput('modmatrix')
+        shiny::mainPanel(
+          htmltools::div(
+            style = "background:#f4f8fd; padding:26px 28px 18px 28px; border-radius:20px; margin-bottom:28px; box-shadow:0 2px 12px #0001;",
+            shiny::uiOutput("spinner"),
+            shiny::verbatimTextOutput("desdetails"),
+            shiny::verbatimTextOutput("printlevnames"),
+            shiny::uiOutput('modmatrix'),
+            hr(),
+            shiny::verbatimTextOutput("decoded_main"),
+            shiny::uiOutput("after_decoded"),
+            shinyBS::bsModal("modaldecode", "", "decode", size = "large",
+                             shiny::fluidRow(
+                               shiny::verbatimTextOutput("decoded")
+                             )
+            )
+          )
         )
+        
       )
     ),
     shiny::tabPanel(title = "Create a survey", value = "createsurv", # Crear la encuesta
       shiny::sidebarLayout(
-        shiny::sidebarPanel( # Sidebar Panel for survey creator
-          htmltools::p("Intro and end text: "),
-          shiny::textAreaInput("intro", "Introductory text in Markdown", rows = 3),
-          shiny::textAreaInput("outro", "End text in Markdown", rows = 3),
-          htmltools::hr(),
-          htmltools::p("Label each alternative: "),
-          shiny::uiOutput("labels"),
-          htmltools::hr()
+        shiny::sidebarPanel(
+          htmltools::div(
+            style = "background:#f8f9fa; padding:22px 20px 12px 20px; border-radius:18px; margin-bottom:28px; box-shadow:0 2px 10px #0001;",
+            htmltools::p("Intro and end text: "),
+            shiny::textAreaInput("intro", "Introductory text in Markdown", rows = 3),
+            shiny::textAreaInput("outro", "End text in Markdown", rows = 3),
+            htmltools::hr(),
+            htmltools::p("Label each alternative: "),
+            shiny::uiOutput("labels"),
+            htmltools::hr()
+          )
         ),
         shiny::mainPanel(
-          htmltools::p("Survey preview"),
-          htmltools::hr(),
-          shiny::uiOutput("dispintrotext"),
-          htmltools::br(),
-          htmltools::hr(),
-          shiny::uiOutput('cstext'),
-          shiny::tableOutput("designcoded"),
-          shiny::uiOutput('radiodummy', width = '100%'),
-          htmltools::br(),
-          htmltools::hr(),
-          shiny::uiOutput("dispoutrotext"),
+          htmltools::div(
+            style = "background:#f4f8fd; padding:26px 28px 18px 28px; border-radius:20px; margin-bottom:28px; box-shadow:0 2px 12px #0001;",
+            htmltools::p("Survey preview"),
+            htmltools::hr(),
+            shiny::uiOutput("dispintrotext"),
+            htmltools::br(),
+            htmltools::hr(),
+            shiny::uiOutput('cstext'),
+            shiny::tableOutput("designcoded"),
+            shiny::uiOutput('radiodummy', width = '100%'),
+            htmltools::br(),
+            htmltools::hr(),
+            shiny::uiOutput("dispoutrotext")
+          )
         )
+        
       )
     ),
     shiny::tabPanel(title = "Survey",
@@ -175,61 +341,200 @@ DCEtool <- function(){
     shiny::tabPanel(title = "Results", value = "results",
              shiny::sidebarLayout(
                shiny::sidebarPanel(
-                 shiny::tabsetPanel(id = "restabs",
-                    shiny::tabPanel("Data",
-                          htmltools::br(),
-                             shiny::downloadButton("downloadresults","Save results", icon = shiny::icon("download")),
-                             shiny::fileInput(inputId = "loadresults",label = "", multiple = FALSE), #load results
-                             shiny::selectInput(
-                               inputId = "pricevarcoding",
-                               label = "Price variable coding",
-                               choices = c("Dummy coding" = "dumcod",
-                                           #"There is already a continuous price variable" = "already",
-                                           "Code price as continuous variable" = "cont")
-                             ),
-                             shiny::uiOutput("atpriceselect"),
-                             shiny::uiOutput("savethem"),
-                             shiny::uiOutput("pricelevbr")
-                             ),
-                    shiny::tabPanel("Estimation",
-                            htmltools::br(),
-                             shiny::selectInput("modelname", "Choose estimate", 
-                                         choices = c("Select a model" == "nullselect",
-                                                     "Conditional logit" = "clogit",
-                                                     "Mixed logit" = "mixlogit",
-                                                     "Willingness to pay" = "wtp",
-                                                     "Figures" = "figures")
-                                         ),
-                             shiny::uiOutput("modopt"),
-                             htmltools::hr(),
-                             shiny::uiOutput("modopt2")
-                             )
+                 htmltools::div(
+                   style = "background:#f8f9fa; padding:22px 20px 12px 20px; border-radius:18px; margin-bottom:28px; box-shadow:0 2px 10px #0001;",
+                   shiny::tabsetPanel(id = "restabs",
+                                      shiny::tabPanel("Data",
+                                                      htmltools::br(),
+                                                      shiny::downloadButton("downloadresults","Save results", icon = shiny::icon("download")),
+                                                      shiny::fileInput(inputId = "loadresults",label = "", multiple = FALSE), #load results
+                                                      shiny::selectInput(
+                                                        inputId = "pricevarcoding",
+                                                        label = "Price variable coding",
+                                                        choices = c("Dummy coding" = "dumcod",
+                                                                    #"There is already a continuous price variable" = "already",
+                                                                    "Code price as continuous variable" = "cont")
+                                                      ),
+                                                      shiny::uiOutput("atpriceselect"),
+                                                      shiny::uiOutput("savethem"),
+                                                      shiny::uiOutput("pricelevbr")
+                                      ),
+                                      shiny::tabPanel("Estimation",
+                                                      htmltools::br(),
+                                                      shiny::selectInput("modelname", "Choose estimate", 
+                                                                         choices = c("Select a model" == "nullselect",
+                                                                                     "Conditional logit" = "clogit",
+                                                                                     "Mixed logit" = "mixlogit",
+                                                                                     "Willingness to pay" = "wtp",
+                                                                                     "Figures" = "figures")
+                                                      ),
+                                                      shiny::uiOutput("modopt"),
+                                                      htmltools::hr(),
+                                                      shiny::uiOutput("modopt2")
+                                      )
+                   )
                  )
                ),
                shiny::mainPanel(
-                 DT::DTOutput("restable"),
-                 shiny::verbatimTextOutput("clog"),
-                 shiny::plotOutput("figure")
-               )
-             )
-             ),
-    shiny::tabPanel(title = "About", 
-               shiny::fluidRow(
-                 shiny::column(12,
-                        align = "Left",
-                        htmltools::h3("About"),
-                        shiny::HTML("<p>This app was created by Daniel P&eacute;rez-Troncoso in 2021. Version 1.0.0 was released in April 2022.</p>"),
-                        shiny::HTML("<p>Please, if you use this app in your research, reference it as 'P&eacute;rez-Troncoso, D. (2022). DCEtool (1.0.0) [Software]. https://cran.r-project.org/package=DCEtool ' </p>"),
-                        shiny::HTML("<p>Find a guide in <a href = 'https://danielpereztr.github.io/posts/DCEtool/'>this link</a></p>"),
-                        htmltools::h3("Downloads"),
-                        shiny::plotOutput("downloads")
+                 htmltools::div(
+                   style = "background:#f4f8fd; padding:26px 28px 18px 28px; border-radius:20px; margin-bottom:28px; box-shadow:0 2px 12px #0001;",
+                   DT::DTOutput("restable"),
+                   shiny::verbatimTextOutput("clog"),
+                   shiny::plotOutput("figure")
                  )
                )
+               
              )
+             ),
+    shiny::tabPanel(
+      title = "About", 
+      shiny::fluidRow(
+        shiny::column(
+          width = 8, offset = 2,
+          align = "left",
+          htmltools::div(
+            style = "background:#f8f9fa;padding:24px 24px 8px 24px;border-radius:16px;margin-bottom:30px;box-shadow:0 2px 12px #0001;",
+            htmltools::h2("About DCEtool", style = "font-weight:bold;"),
+            htmltools::div(
+              style="display:flex;gap:12px;align-items:center;margin-bottom:12px;",
+              htmltools::img(src="assets/logo.png", height="40px", style="border-radius:6px;"),
+              htmltools::div(
+                htmltools::tags$b("Developed by Daniel P\u00e9rez-Troncoso"),
+                htmltools::tags$span(" - Version 1.2.0 (July 2025)", style="color:#888;font-size:15px;")
+              )
+            ),
+            htmltools::p(
+              "DCEtool is an R Shiny application for designing, running, and analyzing Discrete Choice Experiments (DCEs). Designed for maximum usability and efficiency, DCEtool is open, free, and aimed at both beginners and experts."
+            ),
+            htmltools::p(
+              "For documentation and guides, visit the ",
+              htmltools::tags$a("online user guide", href="https://danielpereztr.github.io/posts/DCEtool/", target="_blank"), "."
+            ),
+            htmltools::p(
+              htmltools::tags$b("How to cite DCEtool: "),
+              "P\u00e9rez-Troncoso, D. (2022). DCEtool (v1.2.0) [Software]. https://cran.r-project.org/package=DCEtool"
+            )
+          ),
+          htmltools::div(
+            style = "background:#e7f3fe;padding:20px;border-radius:14px;margin-bottom:20px;border-left:6px solid #1676d2;",
+            htmltools::tags$b("Looking for an online DCE platform?"),
+            htmltools::p(
+              "Try ",
+              htmltools::tags$a("ChoiceLab", href="https://cognitur.net/cl", target="_blank"),
+              " by Cognitur for easy survey deployment, online data collection, and advanced analytics. Ideal for professional projects, teaching, and consulting."
+            ),
+            htmltools::div(
+              style="font-size:14px;",
+              "More at ",
+              htmltools::tags$a("cognitur.net", href="https://cognitur.net", target="_blank")
+            )
+          ),
+          htmltools::h4("Downloads in the last month"),
+          shiny::plotOutput("downloads", height = "280px")
+        )
+      )
+    )
+    ,
+    footer = tagList(
+    htmltools::tags$script(htmltools::HTML("
+      Shiny.addCustomMessageHandler('toggleNotifDropdown', function(message) {
+        var dropdown = document.getElementById('notif_dropdown');
+        if(dropdown.style.display === 'none' || dropdown.style.display === ''){
+          dropdown.style.display = 'block';
+        } else {
+          dropdown.style.display = 'none';
+        }
+      });
+    
+      // Cierra el dropdown al hacer clic fuera
+      document.addEventListener('click', function(event) {
+        var dropdown = document.getElementById('notif_dropdown');
+        var bell = document.getElementById('notif_bell');
+        if (dropdown && bell) {
+          if (!dropdown.contains(event.target) && !bell.contains(event.target)) {
+            dropdown.style.display = 'none';
+          }
+        }
+      });
+    ")))
   )
   
-  
   server <- function(input, output, session){
+    # Contador de notificaciones
+    notif_count <- reactiveVal(0)
+    
+    # Actualizar badge al inicio y periodicamente
+    observe({
+      invalidateLater(300000)  # Actualizar cada 5 minutos
+      
+      tryCatch({
+        response <- httr::GET(notifications_url)
+        if (httr::http_status(response)$category == "Success") {
+          md_txt <- httr::content(response, as = "text", encoding = "UTF-8")
+          # Solo contar los titulos que son [NEW]
+          count <- length(grep("^###?\\s*\\[NEW\\]", strsplit(md_txt, "\n")[[1]]))
+          notif_count(count)
+        } else {
+          notif_count(0)
+        }
+      }, error = function(e) {
+        notif_count(0)
+      })
+    })
+    
+    # Actualizar el badge
+    observe({
+      session$sendCustomMessage("updateNotifBadge", notif_count())
+    })
+    
+    
+    
+    # Renderizar contenido de notificaciones
+    output$notificationsContent <- renderUI({
+      tryCatch({
+        if (httr::http_error(notifications_url)) {
+          htmltools::div(
+            style = "color:#999;text-align:center;padding:30px 0;",
+            icon("exclamation-circle", style = "font-size:2em;margin-bottom:10px;color:#ccc;"),
+            br(),
+            "Could not load notifications"
+          )
+        } else {
+          md_txt <- httr::content(httr::GET(notifications_url), as = "text", encoding = "UTF-8")
+          if (nchar(md_txt) == 0) {
+            htmltools::div(
+              style = "color:#999;text-align:center;padding:30px 0;",
+              icon("check-circle", style = "font-size:2em;margin-bottom:10px;color:#4CAF50;"),
+              br(),
+              "No new notifications"
+            )
+          } else {
+            # Convertir Markdown a HTML
+            html_content <- markdown::markdownToHTML(text = md_txt, fragment.only = TRUE)
+            
+            # Mejorar estilos
+            styled_content <- htmltools::HTML(gsub("<ul>", "<ul style='padding-left:20px;margin-bottom:15px;'>", html_content))
+            styled_content <- gsub("<li>", "<li style='margin-bottom:8px;'>", styled_content)
+            styled_content <- gsub("<h1>|<h2>|<h3>|<h4>", "<h4 style='margin-top:1.2em;margin-bottom:0.8em;color:#2c3e50;border-bottom:1px solid #eee;padding-bottom:5px;'>", styled_content)
+            
+            htmltools::div(
+              style = "color:#333;font-size:14px;line-height:1.6;",
+              htmltools::HTML(styled_content)
+            )
+          }
+        }
+      }, error = function(e) {
+        htmltools::div(
+          style = "color:#e74c3c;padding:20px;text-align:center;",
+          icon("exclamation-triangle"),
+          br(),
+          paste("Error:", e$message)
+        )
+      })
+    })
+    
+    
+    shinyhelper::observe_helpers()
     
     # Check if there is a newer version in CRAN
     shiny::observeEvent(input$inTabset == "start", {
@@ -243,6 +548,8 @@ DCEtool <- function(){
       }
     })
     
+    
+    
     #Close shiny 
     session$onSessionEnded(function() {
       shiny::stopApp()
@@ -253,9 +560,21 @@ DCEtool <- function(){
       shiny::updateTabsetPanel(session, 'inTabset', selected = "params")
     })
     
+    shiny::observeEvent(input$create_new_dce, {
+      shiny::updateNavbarPage(session, "inTabset", selected = "params")
+    })
+    
+    shiny::observeEvent(input$load_data, {
+      shiny::updateNavbarPage(session, "inTabset", selected = "desmattab")
+    })
+    
     # Values across functions
     values <- shiny::reactiveValues() 
     
+    #Check design
+    has_design <- reactive({
+      !is.null(values$design) && nrow(as.data.frame(values$design)) > 0
+    })
     
     # Download flag for later
     values$downloadflag <- 0
@@ -268,9 +587,15 @@ DCEtool <- function(){
     output$dynamic <- shiny::renderUI({
       tags <- htmltools::tagList()
       for (i in seq_len(input$ats)) {
-        tags[[i]] <- shiny::numericInput(paste0('at', i), 
-                                  paste0('Levels in attribute ', i),
-                                  0)
+        tags[[i]] <- shinyhelper::helper(
+          shiny::numericInput(
+            paste0('at', i), 
+            paste0('Levels in attribute ', i),
+            0
+          ),
+          type = "inline",
+          content = "Specify how many levels this attribute should have. For example, 'Price' might have 4 levels (e.g., \u20ac5, \u20ac10, \u20ac15, \u20ac20), while 'Brand' might have 3 levels (e.g., Brand A, Brand B, Brand C). Each attribute should have at least 2 levels to allow for meaningful variation in your experiment."
+        )
       }
       tags
     })
@@ -294,22 +619,60 @@ DCEtool <- function(){
       
       #Ask the alternatives and csets after sending attributes
       output$altbut <- shiny::renderUI({
-        shiny::numericInput("nalt", "Alternatives per choice set", value = 2, max = 5, min = 2)
+        shinyhelper::helper(
+          shiny::numericInput(
+            "nalt", 
+            "Alternatives per choice set", 
+            value = 2, 
+            min = 2, 
+            max = 5
+          ),
+          type = "inline",
+          content = "Specify how many alternatives (options) should appear in each choice set. For example, if you enter 2, each question will present two alternatives to the respondent. Typically, two or three alternatives are common in discrete choice experiments."
+        )
       })
+      
       
       #Ask the number of choice sets
       output$csetbut <- shiny::renderUI({
-        shiny::numericInput("nset", "Number of choice sets", value = 12, min = 4)
+        shinyhelper::helper(
+          shiny::numericInput(
+            "nset", 
+            "Number of choice sets", 
+            value = 12, 
+            min = 4
+          ),
+          type = "inline",
+          content = "Set the total number of choice sets (questions) each respondent will answer. More choice sets increase statistical power but can also make the survey longer and potentially more demanding for respondents. Typical DCEs use between 8 and 16 choice sets per participant."
+        )
       })
       
       #Checkbox if opt-out alternative
       output$optcheck <- shiny::renderUI({
-        shinyWidgets::materialSwitch(inputId = "optout", label = "Opt-out alternative", value = FALSE, status = "danger")
+        shinyhelper::helper(
+          shinyWidgets::materialSwitch(
+            inputId = "optout",
+            label = "Opt-out alternative", 
+            value = FALSE, 
+            status = "danger"
+          ),
+          type = "inline",
+          content = "Enable this option if you want to allow respondents to choose 'none of the above' in each choice set. Including an opt-out alternative can make the experiment more realistic, especially when participants might reject all options in real-world decisions."
+        )
       })
       
       # Checkboxes to select the optimization procedure
       output$bayescheck <- shiny::renderUI({
-        shinyWidgets::materialSwitch(inputId = "bayesian", label = "Bayesian design", status = "danger", value = FALSE)
+        shinyhelper::helper(
+          shinyWidgets::materialSwitch(
+            inputId = "bayesian",
+            label = "Bayesian design", 
+            status = "danger", 
+            value = FALSE
+          ),
+          type = "inline",
+          content = "Activate this option to generate a Bayesian efficient design. Bayesian designs use prior information about the likely values of parameters to optimize the experiment. This can improve statistical efficiency, especially when you have some knowledge or assumptions about attribute importance."
+        )
       })
       
       #Print the button to save the settings
@@ -342,18 +705,40 @@ DCEtool <- function(){
         levels <- values$levels
         nats <- values$nats
         null <- ifelse(optout == TRUE, 1, 0)
-        npar <- sum(levels)-nats+null
+        npar <- sum(levels) - nats + null
         priors <- c()
         for (x in seq_len(npar)){
           priors <- append(priors, 0)
         }
         values$npar <- npar
-        shiny::textInput("priorsinput", "Prior coefficients", value = paste(shQuote(priors, type="cmd2"), collapse=", "))
+        
+        shinyhelper::helper(
+          shiny::textInput(
+            "priorsinput", 
+            "Prior coefficients", 
+            value = paste(shQuote(priors, type="cmd2"), collapse=", ")
+          ),
+          type = "inline",
+          content = paste("Enter the prior coefficients to be used in generating the Bayesian design. These values represent initial estimates of the attribute-level coefficients based on previous knowledge or preliminary research. Each coefficient corresponds to a parameter in the utility function of your discrete choice model. Note that for each attribute, the first level is always omitted as a reference category (baseline), so coefficients are provided for all attribute levels except these reference levels.\n\n",
+                          "The coefficients must be entered as comma-separated values in the exact order of appearance in your design (attributes ordered sequentially, and within each attribute, levels excluding the baseline). For instance, if you have two attributes, 'Price' (3 levels) and 'Brand' (3 levels), the input might look like this:\n\n",
+                          "`-0.1, -0.2, 0.3, 0.5`\n\n",
+                          "Here, 'Price' level 1 and 'Brand' level 1 are omitted as baselines, and the provided coefficients are for 'Price' levels 2 and 3, and 'Brand' levels 2 and 3, respectively.\n\n",
+                          "By default, the app provides zeros (e.g., `0, 0, 0,...`) indicating no prior preference or information. Modify these only if you have prior evidence or estimates from previous studies. If unsure, leave the default zeros.")
+        )
       })
+      
       
       # show button for random seed
       output$seedbut <- shiny::renderUI({
-        shiny::numericInput("randomseed", "Random seed", value = 9999)
+        shinyhelper::helper(
+          shiny::numericInput(
+            "randomseed", 
+            "Random seed", 
+            value = 9999
+          ),
+          type = "inline",
+          content = "Setting a random seed ensures that the random components of the design generation process can be reproduced. Use any integer value. This is especially useful if you want others to be able to recreate your exact design."
+        )
       })
       
       # save options button
@@ -402,6 +787,77 @@ DCEtool <- function(){
       shiny::updateTabsetPanel(session, 'inTabset', selected = "desmattab")
     })
     
+    output$desmatrix_controls <- renderUI({
+      if (!has_design()) {
+        tagList(
+          shinyhelper::helper(
+            shiny::actionButton("gendesign", "Generate design"),
+            type = "inline",
+            content = "Click here to generate the experimental design using the parameters you've defined. This will create a new design matrix based on your settings."
+          ),
+          shinyhelper::helper(
+            shiny::fileInput(inputId = "loaddesign", label = ""),
+            type = "inline",
+            content = "Upload a previously saved Excel file to reload your design and continue working from where you left off."
+          )
+        )
+      } else {
+        tagList(
+          shinyhelper::helper(
+            shiny::actionButton("gendesign", "Generate design"),
+            type = "inline",
+            content = "Click here to generate the experimental design using the parameters you've defined. This will overwrite any previous design."
+          ),
+          htmltools::br(),
+          htmltools::br(),
+          shinyhelper::helper(
+            shiny::downloadButton("downloaddesing", "Save design", icon = shiny::icon("download")),
+            type = "inline",
+            content = "Click here to download your current design as an Excel file. Useful for saving or sharing your work."
+          ),
+          shinyhelper::helper(
+            shiny::fileInput(inputId = "loaddesign", label = ""),
+            type = "inline",
+            content = "Upload a previously saved Excel file to reload your design. This is helpful if you want to edit or continue a previous experiment."
+          ),
+          shinyhelper::helper(
+            shiny::actionButton("showdesdetails", "Show design details", icon = shiny::icon("eye")),
+            type = "inline",
+            content = "Click to display detailed information about your current design, including number of attributes, alternatives, and more."
+          ),
+          htmltools::br(),
+          htmltools::br(),
+          shinyhelper::helper(
+            shiny::actionButton("writeatnames", "Name the attributes", icon = shiny::icon("braille")),
+            type = "inline",
+            content = "Click here to assign custom names to each attribute in your experiment for better interpretation and reporting."
+          ),
+          htmltools::br(),
+          htmltools::br(),
+          shiny::uiOutput("atnames"),
+          htmltools::br(),
+          shiny::uiOutput('levdropdown'),
+          shiny::uiOutput('levtext'),
+          htmltools::hr(),
+          if(!is.null(input$modmatbut)){
+            if(input$modmatbut == TRUE){
+              shinyhelper::helper(
+                shiny::actionButton("decode", "Decode the design matrix"),
+                type = "inline",
+                content = "Click to decode your design matrix. This will display the experimental conditions with actual attribute and level names."
+              )
+            }
+          }
+        )
+      }
+    })
+    
+    observeEvent(input$gotosurvprev, {
+      shiny::updateTabsetPanel(session, "inTabset", selected = "createsurv")
+    })
+    
+    
+    
     
     shiny::observeEvent(input$gendesign,{
       # Loader
@@ -428,12 +884,11 @@ DCEtool <- function(){
           values$bpriors <- values$priors
         }
         
-        
         # Generate
         design <- dce_toolbox(attributes = values$levels, csets = values$sets,
                               alts = values$alts, nochoice = values$optout,
                               priors = values$bpriors, alg = alg)
-        
+        design <<- design
         values$design <- design$design
         values$`D-error` <- design$`D-error`
         values$details <- design$details
@@ -550,6 +1005,8 @@ DCEtool <- function(){
             values$levnames
           })
           
+          
+          
         # If all levels have a name, option to paste in the design matrix
           if (length(values$levnames) == length(values$levels)){
             output$modmatrix <- shiny::renderUI({
@@ -563,6 +1020,7 @@ DCEtool <- function(){
       
     })
     
+    
     #Put names in the design matrix
     shiny::observeEvent(input$modmatbut, {
       levvector <- c()
@@ -574,9 +1032,7 @@ DCEtool <- function(){
       } else {
       namvect <- append(c("task","alt", "optout"), unlist(lapply(levvector, function(x) x[-1])))  
       }
-      print(namvect)
       colnames(values$design) <- namvect
-      
       #Print the table
       output$design <- DT::renderDT({
         values$design <- as.data.frame(values$design)
@@ -584,7 +1040,7 @@ DCEtool <- function(){
       
     })
     
-  
+
     # Save design and other design info (if design changes)
     shiny::observeEvent(values$design, {
       deslist <- list("design" = as.data.frame(values$design), # Save in a list to download in the excel
@@ -641,6 +1097,63 @@ DCEtool <- function(){
       
     })
     
+    # Decoding
+    shiny::observeEvent(input$decode, {
+      dec <- function(x){
+        coding <- c()
+        for (i in seq_len(values$nats)){
+          coding <- append(coding, "D")
+        }
+        decodes <- idefix::Decode(as.matrix(values$design[,3:ncol(values$design)]), values$ncalts, values$levnames2,
+                                  coding = coding, no.choice = values$no.choice, alt.cte = values$nullvect)
+        decodes <- decodes$design
+        decodes <- cbind("set" = rep(1:values$sets, each = values$ncalts), decodes)
+        decodes <- decodes[decodes$set == x,]
+        decodes <- decodes[,2:ncol(decodes)]
+        decodes <- t(decodes)
+        decodes <- as.data.frame(decodes)
+        decodes <- cbind(values$atnames,decodes)
+        row.names(decodes) <- NULL
+        colnames(decodes) <- c("", 1:(ncol(decodes)-1))
+        cat("\n")
+        cat("=== Choice set", x, "===\n")
+        print(decodes)
+      }
+      
+      
+      # Render en el mainPanel
+      output$decoded_main <- shiny::renderPrint({
+        for (i in 1:values$sets){
+          dec(i)
+        }
+      })
+      
+      output$after_decoded <- shiny::renderUI({
+        tags$div(
+          style = "margin-top: 2em; text-align: center;",
+          tags$p(
+            style = "font-size: 1.15em; margin-bottom: 1.2em;",
+            "From this point, you can save this design and create your own DCE in an external online survey platform. For a quick and easy way to generate and customize your choice sets, try ",
+            tags$a(
+              href = "https://cognitur.net/playground/csmaker.html",
+              target = "_blank",
+              "ChoiceSetMaker by Cognitur",
+              style = "font-weight: bold; color: #4F46E5; text-decoration: underline;"
+            ),
+            "."
+          ),
+          tags$a(
+            href = "https://cognitur.net/playground/csmaker.html",
+            target = "_blank",
+            class = "btn btn-primary btn-lg",
+            style = "background: linear-gradient(90deg, #6366F1 0%, #2563EB 100%); border: none; font-weight: 500;",
+            "Go to ChoiceSetMaker"
+          )
+        )
+      })
+      
+    })
+    
     
     # survey creator
     output$labels <- shiny::renderUI({
@@ -691,7 +1204,6 @@ DCEtool <- function(){
         }
         levnames2 <- values$levnames2
         values$coding <- coding
-        print(coding)
         decodes <- idefix::Decode(as.matrix(values$design[,3:ncol(values$design)]), values$ncalts, values$levnames2,
                           coding = coding, no.choice = values$no.choice, alt.cte = values$nullvect)
         decodes <- decodes$design
@@ -1294,11 +1806,23 @@ DCEtool <- function(){
       if (shiny::req(input$inTabset == "About")){
         x <- adjustedcranlogs::adj_cran_downloads("DCEtool",when="last-month")[,c(1,3)]
       }
-      output$downloads <- shiny::renderPlot({
-        if (!is.null(x)) {
-          barplot(count ~ date, data = x)
+      output$downloads <- renderPlot({
+        x <- adjustedcranlogs::adj_cran_downloads("DCEtool", when = "last-month")[, c("date", "count")]
+        if (!is.null(x) && nrow(x) > 0) {
+          ggplot2::ggplot(x, aes(x = as.Date(date), y = count)) +
+            geom_col(fill="#1676d2", alpha=0.85, width=0.8) +
+            labs(title="CRAN Downloads (last month)", x="Date", y="Downloads") +
+            theme_minimal(base_size=14) +
+            theme(
+              plot.title=element_text(face="bold", size=16, margin=margin(b=10)),
+              axis.title=element_text(face="bold"),
+              axis.text=element_text(color="#333"),
+              panel.grid.major.y=element_line(color="#eee"),
+              panel.grid.minor=element_blank()
+            )
         }
       })
+      
         
     })
     

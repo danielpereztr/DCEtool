@@ -1,28 +1,25 @@
 Package: DCEtool
 Title: Efficient and Accessible Discrete Choice Experiments
-Version: 1.0.0
+Version: 1.2.1
 Authors@R: 
     person(given = "Daniel",
-           family = "Perez-Troncoso",
+           family = "Perez Troncoso",
            role = c("aut", "cre"),
-           email = "danielperez@ugr.es",
+           email = "dpereztr@gmail.com",
            comment = c(ORCID = "0000-0003-0091-8148"))
-Description: DCEtool is a R package to design, respond and analyze DCEs. Reference: Perez-Troncoso, D. (2022) <https://github.com/danielpereztr/DCEtool>.
+Description: Design, conduct and analyze 'DCEs' from a virtual interface in shiny. Reference: Perez-Troncoso, D. (2022) <https://github.com/danielpereztr/DCEtool>.
 License: GPL-3
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
-Depends: ggplot2, survival, shinyBS
-Imports: shiny, shinythemes, shinyWidgets, mvtnorm, DT,
-        shinycssloaders, writexl, readxl, idefix, tidyr, mlogit, knitr,
-        fastDummies, tidyverse, matrixStats, bslib, magrittr,
-        htmltools, tibble, stringi, dfidx, adjustedcranlogs, rmarkdown,
-        rlist
-Suggest: rmarkdown, knitr
-Remotes: daattali/shinycssloaders
+RoxygenNote: 7.3.2
+Depends: survival, shinyBS, shinycssloaders
+Imports: shiny, shinyWidgets, mvtnorm, DT, writexl,
+        readxl, idefix, ggplot2, magrittr, remotes, rlist, 
+        shinyhelper, usethis, htmltools, httr, adjustedcranlogs
+Suggests: tidyr, mlogit, knitr, dfidx, MASS, markdown, shinyjs
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2022-04-13 14:13:47 UTC; danie
-Author: Daniel Perez Troncoso [aut, cre]
+Packaged: 2025-07-29 17:49:55 UTC; danie
+Author: Daniel Perez-Troncoso [aut, cre]
     (<https://orcid.org/0000-0003-0091-8148>)
-Maintainer: Daniel Perez Troncoso <danielperez@ugr.es>
+Repository: CRAN
+Date/Publication: 2022-04-14 22:22:34 UTC

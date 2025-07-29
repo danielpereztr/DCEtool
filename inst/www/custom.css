@@ -1,0 +1,125 @@
+/* Navbar background azul */
+.navbar-default {
+  background-color: #0F57FB;
+  border-color: #0F57FB;
+}
+
+/* Navbar texto y links */
+.navbar-default .navbar-brand,
+.navbar-default .navbar-nav > li > a {
+  color: #fff !important;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-nav > li > a:hover {
+  color: #e83e8c !important;
+}
+
+/* Pestaña seleccionada (activa) en la navbar */
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:focus,
+.navbar-default .navbar-nav > .active > a:hover {
+  color: #fff !important;
+  background-color: #0F57FB !important;
+  box-shadow: none;
+  border-bottom: 2px solid #cce6ff !important;
+}
+
+/* Estilo moderno para notificaciones */
+#notif_dropdown {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transition: all 0.3s ease;
+  transform-origin: top right;
+  transform: scale(0.95);
+  opacity: 0;
+  visibility: hidden;
+  display: block !important;
+}
+
+#notif_dropdown.showing {
+  transform: scale(1);
+  opacity: 1;
+  visibility: visible;
+}
+
+#notif_badge {
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+/* Animación para nuevas notificaciones */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.new-notification {
+  animation: pulse 0.5s ease;
+}
+
+#notif_badge {
+  background: #e83e8c !important;  /* Rosa intenso tipo Bootstrap "pink" */
+  color: white !important;
+}
+
+/* Elimina el borde y fondo gris de sidebarPanel y mainPanel */
+.sidebarPanel,
+.mainPanel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+}
+
+.well {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Botones principales personalizados: azules, redondos y modernos */
+.dce-main-btn {
+  background: #1676d2 !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 15px !important;
+  padding: 7px 20px !important;
+  margin: 5px 2px 5px 0 !important;
+  box-shadow: 0 1px 5px #0001;
+  transition: background 0.14s, transform 0.11s;
+}
+
+.dce-main-btn:hover,
+.dce-main-btn:focus {
+  background: #125ea0 !important;
+  color: #fff !important;
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 2px 10px #0001;
+  cursor: pointer;
+}
+
+/* Opcional: para los de color gris tipo "Load" si quieres */
+.dce-alt-btn {
+  background: #ededed !important;
+  color: #2c3e50 !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  font-size: 15px !important;
+  padding: 7px 20px !important;
+  margin: 5px 2px 5px 0 !important;
+  box-shadow: 0 1px 5px #0001;
+  border: none !important;
+  transition: background 0.13s, transform 0.09s;
+}
+
+.dce-alt-btn:hover,
+.dce-alt-btn:focus {
+  background: #e6e6e6 !important;
+  color: #2c3e50 !important;
+}
